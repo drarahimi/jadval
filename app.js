@@ -1,7 +1,9 @@
-// منطق رابط کاربری برنامه جدول تناوبی
-
+// منطق رابط کاربری برنامه جدولانه — شامل تایمر، راهنمایی هوشمند، حالت شب، جدول روزانه، خروجی عکس و کتابچه
 const CUSTOM_WORDS_KEY = "jadval_custom_words";
 const OPTIONS_KEY = "jadval_puzzle_options";
+const THEME_KEY = "jadval_theme";
+const CONTRAST_KEY = "jadval_contrast";
+const BEST_TIMES_KEY = "jadval_best_times";
 
 const FA_DIGITS = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
 
@@ -12,6 +14,46 @@ function toFaDigits(value) {
 function toEnDigits(value) {
   return String(value).replace(/[۰-۹]/g, (d) => FA_DIGITS.indexOf(d));
 }
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  const mm = m < 10 ? "0" + m : "" + m;
+  const ss = s < 10 ? "0" + s : "" + s;
+  return toFaDigits(`${mm}:${ss}`);
+}
+
+// ---------- تنظیمات و تم ----------
+
+function initThemeAndContrast() {
+  const savedTheme = localStorage.getItem(THEME_KEY) || "light";
+  const savedContrast = localStorage.getItem(CONTRAST_KEY) || "normal";
+
+  document.documentElement.dataset.theme = savedTheme;
+  document.documentElement.dataset.contrast = savedContrast;
+
+  const themeBtn = document.getElementById("themeToggleBtn");
+  if (themeBtn) themeBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+  const contrastBtn = document.getElementById("contrastToggleBtn");
+  if (contrastBtn) contrastBtn.textContent = savedContrast === "high" ? "🔍" : "👓";
+}
+
+document.getElementById("themeToggleBtn").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.theme || "light";
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem(THEME_KEY, next);
+  document.getElementById("themeToggleBtn").textContent = next === "dark" ? "☀️" : "🌙";
+});
+
+document.getElementById("contrastToggleBtn").addEventListener("click", () => {
+  const cur = document.documentElement.dataset.contrast || "normal";
+  const next = cur === "high" ? "normal" : "high";
+  document.documentElement.dataset.contrast = next;
+  localStorage.setItem(CONTRAST_KEY, next);
+  document.getElementById("contrastToggleBtn").textContent = next === "high" ? "🔍" : "👓";
+});
 
 function loadPuzzleOptions() {
   try {
@@ -25,12 +67,14 @@ function loadPuzzleOptions() {
 function savePuzzleOptions() {
   try {
     const shapeSel = document.getElementById("gridShapeSelect");
+    const categorySel = document.getElementById("categorySelect");
     const countInput = document.getElementById("wordCountInput");
     const blackCheck = document.getElementById("showBlackCellsCheck");
     const printCheck = document.getElementById("printAnswersCheck");
 
     const opts = {
       gridShape: shapeSel ? shapeSel.value : "sq-9",
+      category: categorySel ? categorySel.value : "all",
       wordCount: countInput ? countInput.value : "۱۲",
       showBlackCells: blackCheck ? blackCheck.checked : true,
       printAnswers: printCheck ? printCheck.checked : true,
@@ -46,6 +90,9 @@ function applySavedPuzzleOptions() {
   const shapeSel = document.getElementById("gridShapeSelect");
   if (shapeSel && saved.gridShape !== undefined) shapeSel.value = saved.gridShape;
 
+  const categorySel = document.getElementById("categorySelect");
+  if (categorySel && saved.category !== undefined) categorySel.value = saved.category;
+
   const countInput = document.getElementById("wordCountInput");
   if (countInput && saved.wordCount !== undefined) countInput.value = saved.wordCount;
 
@@ -56,13 +103,84 @@ function applySavedPuzzleOptions() {
   if (printCheck && saved.printAnswers !== undefined) printCheck.checked = saved.printAnswers;
 }
 
-let currentPuzzle = null; // { grid, rows, cols, words }
-let activeDir = "across";
-let activeCellKey = null;
-const cellInputs = new Map(); // "r,c" -> input element
-const cellWordMembership = new Map(); // "r,c" -> { across: wordObj|null, down: wordObj|null }
+// ---------- تایمر و رکوردها ----------
+
+let elapsedSeconds = 0;
+let timerInterval = null;
+let isTimerRunning = false;
+
+function startTimer() {
+  stopTimer();
+  elapsedSeconds = 0;
+  isTimerRunning = true;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    if (isTimerRunning) {
+      elapsedSeconds++;
+      updateTimerUI();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  isTimerRunning = false;
+}
+
+function updateTimerUI() {
+  const el = document.getElementById("timerText");
+  if (el) el.textContent = `⏱️ ${formatTime(elapsedSeconds)}`;
+}
+
+document.getElementById("timerPauseBtn").addEventListener("click", () => {
+  isTimerRunning = !isTimerRunning;
+  document.getElementById("timerPauseBtn").textContent = isTimerRunning ? "⏸️" : "▶️";
+});
+
+function getBestTimes() {
+  try {
+    const raw = localStorage.getItem(BEST_TIMES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveBestTime(shapeKey, timeInSeconds) {
+  const bests = getBestTimes();
+  if (!bests[shapeKey] || timeInSeconds < bests[shapeKey]) {
+    bests[shapeKey] = timeInSeconds;
+    localStorage.setItem(BEST_TIMES_KEY, JSON.stringify(bests));
+    return true; // New record
+  }
+  return false;
+}
+
+function updateBestTimeUI() {
+  const shapeSel = document.getElementById("gridShapeSelect");
+  const shapeKey = shapeSel ? shapeSel.value : "sq-9";
+  const bests = getBestTimes();
+  const textEl = document.getElementById("bestTimeText");
+  if (textEl) {
+    if (bests[shapeKey]) {
+      textEl.textContent = formatTime(bests[shapeKey]);
+    } else {
+      textEl.textContent = "--:--";
+    }
+  }
+}
+
 
 // ---------- بانک کلمات ----------
+
+let currentPuzzle = null;
+let activeDir = "across";
+let activeCellKey = null;
+const cellInputs = new Map();
+const cellWordMembership = new Map();
 
 function loadCustomWords() {
   try {
@@ -90,6 +208,22 @@ function getAllWords() {
   return all;
 }
 
+function getCategoryWords(catKey) {
+  const all = getAllWords();
+  if (!catKey || catKey === "all") return all;
+
+  const keywords = {
+    science: ["علوم", "فناوری", "دستگاه", "دانش", "پزشکی", "دارو", "شیمی", "فیزیک", "رایانه", "میکروسکوپ", "تلسکوپ", "سیستم", "بیوتکنولوژی", "رباتیک", "هوش"],
+    geography: ["کوه‌", "رود", "دریا", "اقیانوس", "شهر", "کشور", "جزیره", "تالاب", "کویر", "استان", "طبیعت", "بیابان", "آبشار", "قاره", "ساحل"],
+    history: ["شاه", "سلسله", "تاریخ", "کهن", "بنا", "میراث", "باستان", "قرن", "قاجار", "صفوی", "امپراتوری", "هخامنشی", "ساسانی", "اشکانی"],
+    culture: ["شاعر", "شعر", "نقاش", "هنر", "موسیقی", "کتاب", "ساز", "دیوان", "فیلم", "تئاتر", "نویسنده", "حافظ", "سعدی", "فردوسی", "مولوی"],
+    food: ["غذا", "خورش", "پلو", "شیرینی", "کباب", "آش", "دسر", "میوه", "خوراکی", "میوه", "ادویه", "زعفران", "سوهان", "باقلوا"],
+  }[catKey] || [];
+
+  const filtered = all.filter((w) => keywords.some((kw) => w.clue.includes(kw) || w.word.includes(kw)));
+  return filtered.length >= 20 ? filtered : all;
+}
+
 function addCustomWord(word, clue) {
   const custom = loadCustomWords();
   custom.unshift({ word: word.trim(), clue: clue.trim(), custom: true });
@@ -100,6 +234,47 @@ function removeCustomWord(word) {
   const custom = loadCustomWords().filter((w) => w.word !== word);
   saveCustomWords(custom);
 }
+
+// Backup JSON Import/Export
+document.getElementById("exportWordsBtn").addEventListener("click", () => {
+  const custom = loadCustomWords();
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(custom, null, 2));
+  const downloadAnchor = document.createElement("a");
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", "jadvalaneh-words-backup.json");
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+});
+
+document.getElementById("importWordsInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const imported = JSON.parse(event.target.result);
+      if (Array.isArray(imported)) {
+        const custom = loadCustomWords();
+        const seen = new Set(custom.map((w) => w.word));
+        let addedCount = 0;
+        imported.forEach((w) => {
+          if (w.word && w.clue && !seen.has(w.word)) {
+            seen.add(w.word);
+            custom.push({ word: w.word.trim(), clue: w.clue.trim(), custom: true });
+            addedCount++;
+          }
+        });
+        saveCustomWords(custom);
+        renderWordBank();
+        alert(`تعداد ${toFaDigits(addedCount)} کلمه جدید با موفقیت بارگذاری شد.`);
+      }
+    } catch (err) {
+      alert("خطا در خواندن فایل پشتیبان JSON");
+    }
+  };
+  reader.readAsText(file);
+});
 
 // ---------- تب‌ها ----------
 
@@ -112,8 +287,6 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     if (btn.dataset.tab === "bankTab") renderWordBank();
   });
 });
-
-// ---------- رندر بانک کلمات ----------
 
 function renderWordBank() {
   const search = document.getElementById("searchInput").value.trim();
@@ -150,22 +323,7 @@ function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-document.getElementById("searchInput").addEventListener("input", renderWordBank);
-
-document.getElementById("addWordForm").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const wordInput = document.getElementById("newWordInput");
-  const clueInput = document.getElementById("newClueInput");
-  const word = wordInput.value.replace(/\s+/g, "");
-  const clue = clueInput.value.trim();
-  if (!word || !clue) return;
-  addCustomWord(word, clue);
-  wordInput.value = "";
-  clueInput.value = "";
-  renderWordBank();
-});
-
-// ---------- تولید و رندر جدول ----------
+// ---------- رندر گرید پازل ----------
 
 function buildCellWordMembership(puzzle) {
   cellWordMembership.clear();
@@ -206,7 +364,6 @@ function renderGrid(puzzle) {
         cellDiv.className = "cell blocked";
       } else {
         cellDiv.className = "cell filled";
-        const membership = cellWordMembership.get(k) || {};
         const numberKey = puzzle.words.find((p) => p.row === r && p.col === c && p.number);
         if (numberKey) {
           const num = document.createElement("span");
@@ -274,7 +431,6 @@ function onCellFocus(r, c) {
 function onCellClick(r, c) {
   const membership = cellWordMembership.get(r + "," + c) || {};
   if (activeCellKey === r + "," + c) {
-    // toggle direction if both available
     if (membership.across && membership.down) {
       activeDir = activeDir === "across" ? "down" : "across";
     }
@@ -289,7 +445,9 @@ function onCellInput(e, r, c) {
   const val = e.target.value;
   e.target.value = val.slice(-1);
   e.target.parentElement.classList.remove("correct", "incorrect");
+  e.target.classList.remove("wrong-cell");
   if (val) moveToNextCell(r, c);
+  checkFullSolutionAuto();
 }
 
 function onCellKeydown(e, r, c) {
@@ -384,8 +542,6 @@ function getGridOptions() {
   const selVal = sel ? sel.value : "sq-auto";
   if (selVal === "free") {
     return { gridShape: "free" };
-  } else if (selVal === "sq-auto") {
-    return { gridShape: "square", squareSize: "auto" };
   } else if (selVal.startsWith("sq-")) {
     const size = parseInt(selVal.split("-")[1], 10);
     return { gridShape: "square", squareSize: size };
@@ -396,17 +552,70 @@ function getGridOptions() {
 function generateNewPuzzle() {
   const raw = parseInt(toEnDigits(document.getElementById("wordCountInput").value), 10);
   const count = Math.min(30, Math.max(4, isNaN(raw) ? 12 : raw));
+  const categorySel = document.getElementById("categorySelect");
+  const categoryKey = categorySel ? categorySel.value : "all";
+
   const opts = { maxWords: count, attempts: 16, ...getGridOptions() };
-  const all = getAllWords();
-  const puzzle = generateCrossword(all, opts);
+  const words = getCategoryWords(categoryKey);
+
+  const puzzle = generateCrossword(words, opts);
   currentPuzzle = puzzle;
   buildCellWordMembership(puzzle);
   renderGrid(puzzle);
   renderClues(puzzle);
+  startTimer();
+  updateBestTimeUI();
+
   const shapeDesc = puzzle.isSquare ? `کلاسیک متقاطع ${toFaDigits(puzzle.rows)}×${toFaDigits(puzzle.cols)}` : `آزاد ${toFaDigits(puzzle.rows)}×${toFaDigits(puzzle.cols)}`;
   setStatus(`جدول جدید (${shapeDesc}) با ${toFaDigits(puzzle.words.length)} کلمه متقاطع ساخته شد.`, "");
 }
 
+// ---------- جدول روزانه (Daily Puzzle) ----------
+
+function getTodaySeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+
+function seededPRNG(seed) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generateDailyPuzzle() {
+  const seed = getTodaySeed();
+  const rng = seededPRNG(seed);
+
+  // Deterministic shuffle of words
+  const allWords = getAllWords().slice();
+  for (let i = allWords.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [allWords[i], allWords[j]] = [allWords[j], allWords[i]];
+  }
+
+  const gridOpts = getGridOptions();
+  const opts = { maxWords: 12, attempts: 20, ...gridOpts };
+  const puzzle = generateCrossword(allWords, opts);
+
+  currentPuzzle = puzzle;
+  buildCellWordMembership(puzzle);
+  renderGrid(puzzle);
+  renderClues(puzzle);
+  startTimer();
+  updateBestTimeUI();
+
+  const d = new Date();
+  const months = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+  const dateStr = `${toFaDigits(d.getDate())} ${months[d.getMonth()]}`;
+
+  setStatus(`📅 جدول اختصاصی امروز (${dateStr}) با ${toFaDigits(puzzle.words.length)} کلمه آماده شد.`, "");
+}
+
+document.getElementById("dailyPuzzleBtn").addEventListener("click", generateDailyPuzzle);
 document.getElementById("newPuzzleBtn").addEventListener("click", generateNewPuzzle);
 
 const shapeSel = document.getElementById("gridShapeSelect");
@@ -417,29 +626,99 @@ if (shapeSel) {
   });
 }
 
-const blackCheck = document.getElementById("showBlackCellsCheck");
-if (blackCheck) {
-  blackCheck.addEventListener("change", (e) => {
+const categorySel = document.getElementById("categorySelect");
+if (categorySel) {
+  categorySel.addEventListener("change", () => {
     savePuzzleOptions();
-    const gridEl = document.getElementById("grid");
-    const isChecked = e.target.checked ? "true" : "false";
-    if (gridEl) gridEl.dataset.showBlackCells = isChecked;
-    document.querySelectorAll(".print-grid").forEach((pg) => (pg.dataset.showBlackCells = isChecked));
+    generateNewPuzzle();
   });
 }
 
-const printCheck = document.getElementById("printAnswersCheck");
-if (printCheck) {
-  printCheck.addEventListener("change", () => {
-    savePuzzleOptions();
-  });
-}
+// ---------- سیستم راهنمایی (Smart Hints) ----------
 
-document.getElementById("wordCountInput").addEventListener("input", (e) => {
-  const digitsOnly = toEnDigits(e.target.value).replace(/[^0-9]/g, "");
-  e.target.value = digitsOnly ? toFaDigits(digitsOnly) : "";
-  savePuzzleOptions();
+document.getElementById("hintLetterBtn").addEventListener("click", () => {
+  if (!currentPuzzle || !activeCellKey) return;
+  const [r, c] = activeCellKey.split(",").map(Number);
+  const correctLetter = currentPuzzle.grid[r][c];
+  const input = cellInputs.get(activeCellKey);
+  if (input && correctLetter) {
+    input.value = correctLetter;
+    input.parentElement.classList.remove("incorrect");
+    input.parentElement.classList.add("correct");
+    checkFullSolutionAuto();
+  }
 });
+
+document.getElementById("hintWordBtn").addEventListener("click", () => {
+  if (!currentPuzzle || !activeCellKey) return;
+  const [r, c] = activeCellKey.split(",").map(Number);
+  const p = getWordAt(r, c, activeDir);
+  if (!p) return;
+  wordCells(p).forEach(([cr, cc]) => {
+    const correctLetter = currentPuzzle.grid[cr][cc];
+    const input = cellInputs.get(cr + "," + cc);
+    if (input && correctLetter) {
+      input.value = correctLetter;
+      input.parentElement.classList.remove("incorrect");
+      input.parentElement.classList.add("correct");
+    }
+  });
+  checkFullSolutionAuto();
+});
+
+document.getElementById("checkErrorsBtn").addEventListener("click", () => {
+  if (!currentPuzzle) return;
+  let hasError = false;
+  cellInputs.forEach((input, key) => {
+    const [r, c] = key.split(",").map(Number);
+    const correctLetter = currentPuzzle.grid[r][c];
+    if (input.value && input.value !== correctLetter) {
+      input.classList.add("wrong-cell");
+      hasError = true;
+      setTimeout(() => input.classList.remove("wrong-cell"), 3000);
+    }
+  });
+  if (hasError) {
+    setStatus("حروف اشتباه به مدت ۳ ثانیه با رنگ قرمز مشخص شدند.", "err");
+  } else {
+    setStatus("تاکنون هیچ حرف اشتباهی وارد نشده است! باریکلا!", "ok");
+  }
+});
+
+// ---------- بررسی کامل و حل پازل ----------
+
+function checkFullSolutionAuto() {
+  if (!currentPuzzle) return;
+  let allFilled = true;
+  let allCorrect = true;
+
+  for (let r = 0; r < currentPuzzle.rows; r++) {
+    for (let c = 0; c < currentPuzzle.cols; c++) {
+      const letter = currentPuzzle.grid[r][c];
+      if (letter != null) {
+        const input = cellInputs.get(r + "," + c);
+        const val = input ? input.value : "";
+        if (!val) allFilled = false;
+        if (val !== letter) allCorrect = false;
+      }
+    }
+  }
+
+  if (allFilled && allCorrect) {
+    stopTimer();
+    const shapeSel = document.getElementById("gridShapeSelect");
+    const shapeKey = shapeSel ? shapeSel.value : "sq-9";
+    const isRecord = saveBestTime(shapeKey, elapsedSeconds);
+    updateBestTimeUI();
+
+    document.getElementById("completedTimeText").textContent = formatTime(elapsedSeconds);
+    const recEl = document.getElementById("newRecordText");
+    if (recEl) recEl.hidden = !isRecord;
+
+    document.getElementById("completionModal").hidden = false;
+    launchConfetti();
+  }
+}
 
 document.getElementById("checkBtn").addEventListener("click", () => {
   if (!currentPuzzle) return;
@@ -448,59 +727,142 @@ document.getElementById("checkBtn").addEventListener("click", () => {
   for (let r = 0; r < currentPuzzle.rows; r++) {
     for (let c = 0; c < currentPuzzle.cols; c++) {
       const letter = currentPuzzle.grid[r][c];
-      if (letter == null) continue;
-      const input = cellInputs.get(r + "," + c);
-      const cellDiv = input.parentElement;
-      cellDiv.classList.remove("correct", "incorrect");
-      if (!input.value) {
-        allFilled = false;
-        continue;
-      }
-      if (input.value === letter) {
-        cellDiv.classList.add("correct");
-      } else {
-        cellDiv.classList.add("incorrect");
-        allCorrect = false;
+      if (letter != null) {
+        const input = cellInputs.get(r + "," + c);
+        const val = input ? input.value : "";
+        if (!val) allFilled = false;
+        if (val !== letter) {
+          allCorrect = false;
+          if (input) input.parentElement.classList.add("incorrect");
+        } else {
+          if (input) input.parentElement.classList.add("correct");
+        }
       }
     }
   }
-  if (!allFilled) setStatus("هنوز همه خانه‌ها پر نشده‌اند.", "err");
-  else if (allCorrect) setStatus("آفرین! همه پاسخ‌ها درست است. 🎉", "ok");
-  else setStatus("برخی پاسخ‌ها اشتباه است.", "err");
+  if (!allFilled) {
+    setStatus("جدول کامل نشده است. خانه‌های خالی را پر کنید.", "err");
+  } else if (allCorrect) {
+    checkFullSolutionAuto();
+  } else {
+    setStatus("برخی از خانه‌ها نادرست هستند. موارد قرمز را اصلاح کنید.", "err");
+  }
 });
 
 document.getElementById("revealBtn").addEventListener("click", () => {
   if (!currentPuzzle) return;
+  stopTimer();
   for (let r = 0; r < currentPuzzle.rows; r++) {
     for (let c = 0; c < currentPuzzle.cols; c++) {
       const letter = currentPuzzle.grid[r][c];
-      if (letter == null) continue;
-      const input = cellInputs.get(r + "," + c);
-      input.value = letter;
-      input.parentElement.classList.remove("incorrect");
-      input.parentElement.classList.add("correct");
+      if (letter != null) {
+        const input = cellInputs.get(r + "," + c);
+        if (input) {
+          input.value = letter;
+          input.parentElement.classList.remove("incorrect");
+          input.parentElement.classList.add("correct");
+        }
+      }
     }
   }
-  setStatus("پاسخ‌ها نمایش داده شد.", "");
+  setStatus("پاسخ کامل جدول نمایش داده شد.", "ok");
 });
 
 document.getElementById("clearBtn").addEventListener("click", () => {
-  if (!currentPuzzle) return;
   cellInputs.forEach((input) => {
     input.value = "";
-    input.parentElement.classList.remove("correct", "incorrect");
+    input.parentElement.classList.remove("correct", "incorrect", "wrong-cell");
   });
-  clearHighlights();
-  setStatus("", "");
+  startTimer();
+  setStatus("جدول پاک شد.", "");
 });
 
-// ---------- چاپ ----------
+document.getElementById("closeCompletionModalBtn").addEventListener("click", () => {
+  document.getElementById("completionModal").hidden = true;
+  generateNewPuzzle();
+});
 
-// ---------- چاپ ----------
+// ---------- خروجی عکس PNG ----------
+
+document.getElementById("exportPngBtn").addEventListener("click", () => {
+  if (!currentPuzzle) return;
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const rows = currentPuzzle.rows;
+  const cols = currentPuzzle.cols;
+  const cellSize = 42;
+  const gridW = cols * cellSize;
+  const gridH = rows * cellSize;
+
+  canvas.width = gridW + 40;
+  canvas.height = gridH + 120;
+
+  // Background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Title
+  ctx.fillStyle = "#1f2430";
+  ctx.font = "bold 20px Vazirmatn, sans-serif";
+  ctx.direction = "rtl";
+  ctx.textAlign = "center";
+  ctx.fillText("جدولانه — جدول کلمات متقاطع", canvas.width / 2, 35);
+
+  // Subtitle
+  ctx.fillStyle = "#e11d48";
+  ctx.font = "bold 13px Vazirmatn, sans-serif";
+  ctx.fillText("❤️ تقدیم به پدر عزیزم", canvas.width / 2, 55);
+
+  // Draw Grid
+  const startX = 20;
+  const startY = 75;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = startX + c * cellSize;
+      const y = startY + r * cellSize;
+      const letter = currentPuzzle.grid[r][c];
+
+      if (letter == null) {
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(x, y, cellSize, cellSize);
+      } else {
+        ctx.strokeStyle = "#2a2540";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, cellSize, cellSize);
+
+        // Number
+        const numObj = currentPuzzle.words.find((p) => p.row === r && p.col === c && p.number);
+        if (numObj) {
+          ctx.fillStyle = "#000000";
+          ctx.font = "bold 11px Vazirmatn, sans-serif";
+          ctx.textAlign = "right";
+          ctx.fillText(toFaDigits(numObj.number), x + cellSize - 4, y + 14);
+        }
+
+        // Filled value or clear
+        const input = cellInputs.get(r + "," + c);
+        if (input && input.value) {
+          ctx.fillStyle = "#1f2430";
+          ctx.font = "bold 20px Vazirmatn, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(input.value, x + cellSize / 2, y + cellSize / 2 + 7);
+        }
+      }
+    }
+  }
+
+  const link = document.createElement("a");
+  link.download = "jadvalaneh-puzzle.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+});
+
+// ---------- خروجی چاپ و کتابچه ----------
 
 function buildPrintPage(puzzle, isAnswerKey, puzzleIndex = null, totalPuzzles = null) {
   const showBlack = document.getElementById("showBlackCellsCheck") ? document.getElementById("showBlackCellsCheck").checked : true;
-
   const page = document.createElement("div");
   page.className = "print-page";
 
@@ -509,64 +871,70 @@ function buildPrintPage(puzzle, isAnswerKey, puzzleIndex = null, totalPuzzles = 
   const maxColClues = Math.max(across.length, down.length);
   const gridDim = Math.max(puzzle.rows, puzzle.cols);
 
-  // 1. Dynamic Grid Cell Sizing
-  const maxWidthMm = 175;
+  // 1. Dynamic Grid Cell Sizing based on grid dimension & total clue count
+  const maxWidthMm = 180;
   let targetMaxHeightMm = 95;
   let maxCellCap = 11;
 
   if (gridDim <= 7) {
-    targetMaxHeightMm = 105;
+    targetMaxHeightMm = 108;
     maxCellCap = 14;
   } else if (gridDim <= 9) {
-    targetMaxHeightMm = 98;
-    maxCellCap = 11.5;
+    targetMaxHeightMm = 100;
+    maxCellCap = 12;
   } else if (gridDim <= 11) {
-    targetMaxHeightMm = 92;
-    maxCellCap = 9.2;
+    targetMaxHeightMm = maxColClues > 20 ? 82 : 92;
+    maxCellCap = maxColClues > 20 ? 8.4 : 9.4;
   } else {
-    targetMaxHeightMm = 85;
-    maxCellCap = 7.8;
+    targetMaxHeightMm = maxColClues > 20 ? 74 : 84;
+    maxCellCap = maxColClues > 20 ? 7.4 : 8.0;
   }
 
   const byWidth = Math.floor((maxWidthMm / puzzle.cols) * 10) / 10;
   const byHeight = Math.floor((targetMaxHeightMm / puzzle.rows) * 10) / 10;
-  const cellSize = Math.max(5, Math.min(maxCellCap, byWidth, byHeight));
+  const cellSize = Math.max(5.0, Math.min(maxCellCap, byWidth, byHeight));
 
-  // 2. Larger Cell Text & Corner Numbers Font Sizes
-  const cellFontSize = Math.max(10, Math.round(cellSize * 1.75 * 10) / 10);
-  const cellNumSize = Math.max(4.5, Math.round(cellSize * 0.7 * 10) / 10);
+  // 2. Cell Text & Corner Numbers Font Sizes (Extra Large & Bold)
+  const cellFontSize = Math.max(11.0, Math.round(cellSize * 1.95 * 10) / 10);
+  const cellNumSize = Math.max(5.5, Math.round(cellSize * 0.78 * 10) / 10);
 
-  // 3. Larger Clue Font Size & Spacing based on maxColClues
-  let clueFontSize = 9.2;
-  let clueLineHeight = 1.35;
+  // 3. Extra Large Clue Font Sizes & Bold Reading Spacing
+  let clueFontSize = 11;
+  let clueLineHeight = 1.38;
   let clueMarginBottom = 1.8;
-  let h3FontSize = 11;
-  let titleFontSize = 15;
+  let h3FontSize = 12.5;
+  let titleFontSize = 17;
 
   if (maxColClues <= 6) {
-    clueFontSize = 13;
-    clueLineHeight = 1.55;
-    clueMarginBottom = 4;
-    h3FontSize = 14;
-    titleFontSize = 18;
+    clueFontSize = 14.5;
+    clueLineHeight = 1.60;
+    clueMarginBottom = 4.5;
+    h3FontSize = 16;
+    titleFontSize = 19.5;
   } else if (maxColClues <= 9) {
-    clueFontSize = 11.5;
-    clueLineHeight = 1.45;
-    clueMarginBottom = 3;
-    h3FontSize = 12.5;
-    titleFontSize = 16.5;
+    clueFontSize = 13.0;
+    clueLineHeight = 1.50;
+    clueMarginBottom = 3.5;
+    h3FontSize = 14.5;
+    titleFontSize = 18;
   } else if (maxColClues <= 13) {
-    clueFontSize = 10.2;
-    clueLineHeight = 1.38;
-    clueMarginBottom = 2;
-    h3FontSize = 11.5;
+    clueFontSize = 12.0;
+    clueLineHeight = 1.44;
+    clueMarginBottom = 2.4;
+    h3FontSize = 13.5;
+    titleFontSize = 16.5;
+  } else if (maxColClues <= 20) {
+    clueFontSize = 11.0;
+    clueLineHeight = 1.35;
+    clueMarginBottom = 1.6;
+    h3FontSize = 12.5;
     titleFontSize = 15;
   } else {
-    clueFontSize = 9.2;
-    clueLineHeight = 1.3;
-    clueMarginBottom = 1.4;
-    h3FontSize = 10.5;
-    titleFontSize = 14;
+    clueFontSize = 10.2;
+    clueLineHeight = 1.28;
+    clueMarginBottom = 1.2;
+    h3FontSize = 11.5;
+    titleFontSize = 14.5;
   }
 
   page.style.setProperty("--print-cell", cellSize + "mm");
@@ -575,12 +943,13 @@ function buildPrintPage(puzzle, isAnswerKey, puzzleIndex = null, totalPuzzles = 
   page.style.setProperty("--print-clue-font", clueFontSize + "pt");
   page.style.setProperty("--print-clue-lh", clueLineHeight);
   page.style.setProperty("--print-clue-mb", clueMarginBottom + "mm");
+
   page.style.setProperty("--print-h3-font", h3FontSize + "pt");
   page.style.setProperty("--print-header-font", titleFontSize + "pt");
 
+
   const header = document.createElement("div");
   header.className = "print-header";
-
   let brandText = "جدولانه";
   if (isAnswerKey) {
     brandText += puzzleIndex != null ? ` (پاسخ‌نامه شماره ${toFaDigits(puzzleIndex)})` : " (پاسخ‌نامه)";
@@ -602,41 +971,39 @@ function buildPrintPage(puzzle, isAnswerKey, puzzleIndex = null, totalPuzzles = 
   `;
   page.appendChild(header);
 
-  const printGrid = document.createElement("div");
-  printGrid.className = "print-grid";
-  printGrid.dataset.showBlackCells = showBlack ? "true" : "false";
-  printGrid.dataset.isSquare = puzzle.isSquare ? "true" : "false";
+  const gridDiv = document.createElement("div");
+  gridDiv.className = "print-grid";
+  gridDiv.dataset.showBlackCells = showBlack ? "true" : "false";
+  gridDiv.style.gridTemplateColumns = `repeat(${puzzle.cols}, var(--print-cell, 10mm))`;
+  gridDiv.style.gridTemplateRows = `repeat(${puzzle.rows}, var(--print-cell, 10mm))`;
 
-  printGrid.style.gridTemplateColumns = `repeat(${puzzle.cols}, ${cellSize}mm)`;
-  printGrid.style.gridTemplateRows = `repeat(${puzzle.rows}, ${cellSize}mm)`;
 
   for (let r = 0; r < puzzle.rows; r++) {
     for (let c = 0; c < puzzle.cols; c++) {
-      const div = document.createElement("div");
+      const cell = document.createElement("div");
       const letter = puzzle.grid[r][c];
       if (letter == null) {
-        div.className = "print-cell blocked";
+        cell.className = "print-cell blocked";
       } else {
-        div.className = "print-cell";
+        cell.className = "print-cell";
         const numberKey = puzzle.words.find((p) => p.row === r && p.col === c && p.number);
         if (numberKey) {
           const num = document.createElement("span");
           num.className = "num";
           num.textContent = toFaDigits(numberKey.number);
-          div.appendChild(num);
+          cell.appendChild(num);
         }
         if (isAnswerKey) {
-          div.appendChild(document.createTextNode(letter));
+          cell.appendChild(document.createTextNode(letter));
         }
       }
-      printGrid.appendChild(div);
+      gridDiv.appendChild(cell);
     }
   }
-  page.appendChild(printGrid);
+  page.appendChild(gridDiv);
 
   const cluesDiv = document.createElement("div");
   cluesDiv.className = "print-clues";
-
   const acrossCol = document.createElement("div");
   acrossCol.className = "print-clue-col";
   acrossCol.innerHTML = "<h3>افقی</h3>";
@@ -669,19 +1036,29 @@ function buildPrintPage(puzzle, isAnswerKey, puzzleIndex = null, totalPuzzles = 
 function buildPrintView(puzzle, includeAnswers) {
   const printArea = document.getElementById("printArea");
   printArea.innerHTML = "";
-  if (!puzzle || puzzle.rows === 0) return;
-
   printArea.appendChild(buildPrintPage(puzzle, false));
-
   if (includeAnswers) {
     printArea.appendChild(buildPrintPage(puzzle, true));
   }
 }
 
-function buildBatchPrintView(puzzles, placement) {
+function buildBatchPrintView(puzzles, placement, includeCover = true) {
   const printArea = document.getElementById("printArea");
   printArea.innerHTML = "";
   const total = puzzles.length;
+
+  if (includeCover) {
+    const cover = document.createElement("div");
+    cover.className = "booklet-cover-page";
+    const d = new Date();
+    cover.innerHTML = `
+      <h1>📚 کتابچه جدول‌های متقاطع روزنامه‌ای</h1>
+      <h2>مجموعه ${toFaDigits(total)} جدول متقاطع روزنامه‌ای با پاسخ‌نامه</h2>
+      <div class="cover-dedication">❤️ تقدیم با عشق به پدر عزیزم</div>
+      <div class="cover-meta">طراحی و تولیدشده توسط سامانه جدولانه • ${toFaDigits(d.getFullYear())}</div>
+    `;
+    printArea.appendChild(cover);
+  }
 
   if (placement === "interleaved") {
     puzzles.forEach((puzzle, idx) => {
@@ -697,7 +1074,6 @@ function buildBatchPrintView(puzzles, placement) {
       printArea.appendChild(buildPrintPage(puzzle, true, idx + 1, total));
     });
   } else {
-    // none
     puzzles.forEach((puzzle, idx) => {
       printArea.appendChild(buildPrintPage(puzzle, false, idx + 1, total));
     });
@@ -708,9 +1084,7 @@ document.getElementById("printBtn").addEventListener("click", () => {
   if (!currentPuzzle) return;
   const includeAnswers = document.getElementById("printAnswersCheck") ? document.getElementById("printAnswersCheck").checked : false;
   buildPrintView(currentPuzzle, includeAnswers);
-  setTimeout(() => {
-    window.print();
-  }, 50);
+  setTimeout(() => window.print(), 50);
 });
 
 // ---------- مدال چاپ گروهی ----------
@@ -732,9 +1106,7 @@ function openBatchModal() {
 }
 
 function closeBatchModal() {
-  if (batchModal) {
-    batchModal.hidden = true;
-  }
+  if (batchModal) batchModal.hidden = true;
 }
 
 if (batchPrintBtn) batchPrintBtn.addEventListener("click", openBatchModal);
@@ -756,6 +1128,7 @@ if (startBatchPrintBtn) {
 
     const placementRadio = document.querySelector('input[name="answerPlacement"]:checked');
     const placement = placementRadio ? placementRadio.value : "interleaved";
+    const includeCover = document.getElementById("includeCoverCheck") ? document.getElementById("includeCoverCheck").checked : true;
 
     batchProgress.hidden = false;
     startBatchPrintBtn.disabled = true;
@@ -786,21 +1159,70 @@ if (startBatchPrintBtn) {
       puzzles.push(puzzle);
     }
 
-    buildBatchPrintView(puzzles, placement);
+    buildBatchPrintView(puzzles, placement, includeCover);
     closeBatchModal();
 
-    setTimeout(() => {
-      window.print();
-    }, 100);
+    setTimeout(() => window.print(), 100);
   });
 }
 
-// شروع اولیه
+// ---------- انیمیشن نورافشانی و جشن کامل کردن جدول (Confetti) ----------
+
+function launchConfetti() {
+  const canvas = document.getElementById("confettiCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ["#6d5bf6", "#22c1a2", "#f59e0b", "#ef4444", "#ec4899", "#3b82f6"];
+
+  for (let i = 0; i < 120; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      vx: (Math.random() - 0.5) * 4,
+      vy: Math.random() * 5 + 3,
+      size: Math.random() * 8 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+    });
+  }
+
+  let startTime = performance.now();
+
+  function animate(now) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach((p) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rotation += 4;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    });
+
+    if (now - startTime < 4000) {
+      requestAnimationFrame(animate);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// ---------- شروع اولیه ----------
+initThemeAndContrast();
 applySavedPuzzleOptions();
 generateNewPuzzle();
 renderWordBank();
 
-// ثبت سرویس‌ورکر (PWA) برای نصب روی گوشی و کارکرد آفلاین
+// ثبت سرویس‌ورکر (PWA) برای کارکرد آفلاین و نصب
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});

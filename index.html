@@ -28,15 +28,21 @@
         <p class="subtitle">جدول کلمات متقاطع هوشمند <span class="dedication-tag">❤️ تقدیم به پدر عزیزم</span></p>
       </div>
     </div>
-    <nav class="tabs">
-      <button class="tab-btn active" data-tab="puzzleTab">پازل</button>
-      <button class="tab-btn" data-tab="bankTab">بانک کلمات</button>
-    </nav>
+    <div class="header-actions">
+      <button id="themeToggleBtn" class="icon-btn" title="تغییر تم (روز / شب)">🌙</button>
+      <button id="contrastToggleBtn" class="icon-btn" title="حالت درشت‌خط / پررنگ">👓</button>
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="puzzleTab">پازل</button>
+        <button class="tab-btn" data-tab="bankTab">بانک کلمات</button>
+      </nav>
+    </div>
   </header>
 
   <section id="puzzleTab" class="tab-panel">
     <div class="toolbar">
       <button id="newPuzzleBtn" class="primary-btn">🔀 ساخت جدول جدید</button>
+      <button id="dailyPuzzleBtn" class="secondary-btn">📅 جدول امروز</button>
+
       <label class="count-label">
         شکل جدول
         <select id="gridShapeSelect" class="grid-shape-select">
@@ -47,26 +53,64 @@
           <option value="free">📐 آزاد (غیرمربعی)</option>
         </select>
       </label>
+
+      <label class="count-label">
+        موضوع
+        <select id="categorySelect" class="grid-shape-select">
+          <option value="all" selected>✨ همه موضوعات</option>
+          <option value="science">🔬 علوم و فناوری</option>
+          <option value="geography">🌍 جغرافیا و طبیعت</option>
+          <option value="history">📜 تاریخ و فرهنگ</option>
+          <option value="culture">🎭 هنر، ادبیات و مشاهیر</option>
+          <option value="food">🍲 خوراک و سوغات ایرانی</option>
+        </select>
+      </label>
+
       <label class="count-label">
         تعداد کلمات
         <input id="wordCountInput" type="text" inputmode="numeric" maxlength="2" value="۱۲" />
       </label>
-      <button id="checkBtn">✓ بررسی پاسخ‌ها</button>
+
+      <div class="timer-badge">
+        <span id="timerText">⏱️ ۰۰:۰۰</span>
+        <button id="timerPauseBtn" class="timer-btn" title="توقف / ادامه زمان">⏸️</button>
+      </div>
+
+      <div id="bestTimeBadge" class="best-time-badge" title="بهترین زمان ثبت‌شده">
+        <span>🏆</span>
+        <span id="bestTimeText">--:--</span>
+      </div>
+
+
+      <span class="toolbar-sep"></span>
+
+      <button id="hintLetterBtn" class="hint-btn">💡 راهنمایی حرف</button>
+      <button id="hintWordBtn" class="hint-btn">🔍 راهنمایی کلمه</button>
+      <button id="checkErrorsBtn" class="hint-btn danger-hint">❌ بررسی اشتباهات</button>
+
+      <button id="checkBtn">✓ بررسی کامل</button>
       <button id="revealBtn">نمایش پاسخ</button>
       <button id="clearBtn">پاک‌کردن</button>
+
+      <span class="toolbar-sep"></span>
+
       <label class="count-label print-answers-label">
         <input id="showBlackCellsCheck" type="checkbox" checked />
         خانه‌های سیاه
       </label>
-      <span class="toolbar-sep"></span>
+
       <label class="count-label print-answers-label">
         <input id="printAnswersCheck" type="checkbox" checked />
         چاپ همراه با پاسخ
       </label>
+
+      <button id="exportPngBtn" class="export-btn">🖼️ دریافت عکس PNG</button>
       <button id="printBtn">🖨️ چاپ جدول</button>
-      <button id="batchPrintBtn" class="batch-print-btn">📚 چاپ گروهی / PDF</button>
+      <button id="batchPrintBtn" class="batch-print-btn">📚 چاپ گروهی / کتابچه</button>
     </div>
+
     <p id="statusMsg" class="status-msg"></p>
+
     <div class="puzzle-area">
       <div id="gridWrap" class="grid-wrap">
         <div id="grid" class="grid" dir="rtl"></div>
@@ -88,6 +132,11 @@
     <div class="toolbar">
       <input id="searchInput" type="text" placeholder="جستجو در کلمات یا توضیحات..." />
       <span id="wordCount" class="word-count"></span>
+      <button id="exportWordsBtn" class="secondary-btn">📥 دانلود نسخه پشتیبان (JSON)</button>
+      <label class="import-words-label secondary-btn">
+        <input id="importWordsInput" type="file" accept=".json" hidden />
+        📤 بارگذاری پشتیبان (JSON)
+      </label>
     </div>
     <form id="addWordForm" class="add-word-form">
       <input id="newWordInput" type="text" placeholder="کلمه (بدون فاصله)" required />
@@ -112,7 +161,7 @@
 <div id="batchModal" class="modal-overlay" hidden>
   <div class="modal-card">
     <div class="modal-header">
-      <h2>📚 چاپ / خروجی PDF گروهی</h2>
+      <h2>📚 چاپ / خروجی PDF گروهی و کتابچه</h2>
       <button id="closeBatchModalBtn" class="modal-close-btn">&times;</button>
     </div>
     <div class="modal-body">
@@ -124,6 +173,13 @@
           <input id="batchCountInput" type="number" min="1" max="50" value="5" />
           <span class="input-unit">عدد</span>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input id="includeCoverCheck" type="checkbox" checked />
+          افزودن صفحه جلد اختصاصی کتابچه (*"کتابچه جدول متقاطع — تقدیم به پدر عزیزم"*)
+        </label>
       </div>
 
       <div class="form-group">
@@ -156,6 +212,20 @@
   </div>
 </div>
 
+<!-- Completion Modal & Celebration -->
+<div id="completionModal" class="modal-overlay" hidden>
+  <div class="modal-card celebration-card">
+    <div class="celebration-icon">🎉</div>
+    <h2>تبریک! جدول با موفقیت حل شد!</h2>
+    <p class="celebration-time">زمان حل: <span id="completedTimeText">۰۰:۰۰</span></p>
+    <p id="newRecordText" class="new-record-text" hidden>🏆 رکورد جدید ثبت شد!</p>
+    <div class="modal-footer flex-center">
+      <button id="closeCompletionModalBtn" class="primary-btn">عالی! جدول جدید</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confettiCanvas" class="confetti-canvas"></canvas>
 <div id="printArea" class="print-area" dir="rtl"></div>
 
 <script src="words.js"></script>
