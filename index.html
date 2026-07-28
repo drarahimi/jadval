@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>جدولانه — جدول کلمات متقاطع هوشمند</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-icon">✦</span>
+      <div>
+        <h1>جدولانه</h1>
+        <p class="subtitle">جدول کلمات متقاطع هوشمند</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="puzzleTab">پازل</button>
+      <button class="tab-btn" data-tab="bankTab">بانک کلمات</button>
+    </nav>
+  </header>
+
+  <section id="puzzleTab" class="tab-panel">
+    <div class="toolbar">
+      <button id="newPuzzleBtn" class="primary-btn">🔀 ساخت جدول جدید</button>
+      <label class="count-label">
+        تعداد کلمات
+        <input id="wordCountInput" type="text" inputmode="numeric" maxlength="2" value="۱۲" />
+      </label>
+      <button id="checkBtn">✓ بررسی پاسخ‌ها</button>
+      <button id="revealBtn">نمایش پاسخ</button>
+      <button id="clearBtn">پاک‌کردن</button>
+      <span class="toolbar-sep"></span>
+      <label class="count-label print-answers-label">
+        <input id="printAnswersCheck" type="checkbox" />
+        چاپ همراه با پاسخ
+      </label>
+      <button id="printBtn">🖨️ چاپ جدول</button>
+    </div>
+    <p id="statusMsg" class="status-msg"></p>
+    <div class="puzzle-area">
+      <div id="gridWrap" class="grid-wrap">
+        <div id="grid" class="grid" dir="rtl"></div>
+      </div>
+      <div class="clues">
+        <div class="clue-col">
+          <h3>افقی</h3>
+          <ol id="acrossList"></ol>
+        </div>
+        <div class="clue-col">
+          <h3>عمودی</h3>
+          <ol id="downList"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="bankTab" class="tab-panel" hidden>
+    <div class="toolbar">
+      <input id="searchInput" type="text" placeholder="جستجو در کلمات یا توضیحات..." />
+      <span id="wordCount" class="word-count"></span>
+    </div>
+    <form id="addWordForm" class="add-word-form">
+      <input id="newWordInput" type="text" placeholder="کلمه (بدون فاصله)" required />
+      <input id="newClueInput" type="text" placeholder="توضیح / تعریف" required />
+      <button type="submit" class="primary-btn">+ افزودن به بانک</button>
+    </form>
+    <div class="table-wrap">
+      <table id="wordTable">
+        <thead>
+          <tr>
+            <th>کلمه</th>
+            <th>توضیح</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="wordTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<div id="printArea" class="print-area" dir="rtl">
+  <div class="print-header">
+    <h1>جدولانه</h1>
+    <p id="printMeta"></p>
+  </div>
+  <div id="printGrid" class="print-grid"></div>
+  <div class="print-clues">
+    <div class="print-clue-col">
+      <h3>افقی</h3>
+      <ol id="printAcross"></ol>
+    </div>
+    <div class="print-clue-col">
+      <h3>عمودی</h3>
+      <ol id="printDown"></ol>
+    </div>
+  </div>
+</div>
+
+<script src="words.js"></script>
+<script src="crossword.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
