@@ -397,6 +397,7 @@ function renderGrid(puzzle) {
         input.dataset.row = r;
         input.dataset.col = c;
         input.autocomplete = "off";
+        input.setAttribute("inputmode", "none");
         input.addEventListener("focus", () => onCellFocus(r, c));
         input.addEventListener("click", () => onCellClick(r, c));
         input.addEventListener("keydown", (e) => onCellKeydown(e, r, c));
@@ -407,6 +408,7 @@ function renderGrid(puzzle) {
       gridEl.appendChild(cellDiv);
     }
   }
+  renderVirtualKeyboard();
 }
 
 function getWordAt(r, c, dir) {
@@ -450,6 +452,21 @@ function highlightWord(p) {
   }
 }
 
+function openVirtualKeyboard() {
+  const virtualKeyboard = document.getElementById("virtualKeyboard");
+  const puzzleTab = document.getElementById("puzzleTab");
+  const toggleVkFab = document.getElementById("toggleVkFab");
+
+  if (virtualKeyboard && virtualKeyboard.classList.contains("collapsed")) {
+    virtualKeyboard.classList.remove("collapsed");
+    if (puzzleTab) puzzleTab.classList.remove("vk-collapsed");
+    if (toggleVkFab) {
+      toggleVkFab.classList.add("active");
+      toggleVkFab.setAttribute("title", "مخفی‌کردن کیبورد");
+    }
+  }
+}
+
 function onCellFocus(r, c) {
   const membership = cellWordMembership.get(r + "," + c) || {};
   if (!membership[activeDir]) {
@@ -457,6 +474,8 @@ function onCellFocus(r, c) {
   }
   activeCellKey = r + "," + c;
   highlightWord(membership[activeDir]);
+  updateVkDirBtn();
+  openVirtualKeyboard();
 }
 
 function onCellClick(r, c) {
@@ -470,6 +489,8 @@ function onCellClick(r, c) {
   }
   activeCellKey = r + "," + c;
   highlightWord(membership[activeDir]);
+  updateVkDirBtn();
+  openVirtualKeyboard();
 }
 
 function onCellInput(e, r, c) {
@@ -1359,11 +1380,146 @@ function initToolbarToggles() {
   });
 }
 
+// ---------- کیبورد مجازی اختصاصی فارسی ----------
+
+const VK_ROWS = [
+  ["ض", "ص", "ث", "ق", "ف", "غ", "ع", "ه", "خ", "ح", "ج", "چ"],
+  ["ش", "س", "ی", "ب", "ل", "ا", "ت", "ن", "م", "ک", "گ", "ژ"],
+  ["ظ", "ط", "ز", "ر", "ذ", "د", "پ", "و", "آ", "BACKSPACE"]
+];
+
+function renderVirtualKeyboard() {
+  const vkContainer = document.getElementById("virtualKeyboard");
+  if (!vkContainer) return;
+  vkContainer.innerHTML = "";
+
+  VK_ROWS.forEach((rowKeys) => {
+    const rowDiv = document.createElement("div");
+    rowDiv.className = "vk-row";
+
+    rowKeys.forEach((key) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+
+      if (key === "BACKSPACE") {
+        btn.className = "vk-key vk-key-special danger";
+        btn.innerHTML = "⌫ پاک";
+        btn.title = "حذف حرف";
+        btn.dataset.action = "backspace";
+      } else {
+        btn.className = "vk-key";
+        btn.textContent = key;
+        btn.dataset.char = key;
+      }
+
+      // جلوگیری از خروج فوکوس خانه گرید هنگام لمس دکمه‌های کیبورد
+      btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+      });
+
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        onVirtualKeyPress(key);
+      });
+
+      rowDiv.appendChild(btn);
+    });
+
+    vkContainer.appendChild(rowDiv);
+  });
+
+  // نوار کنترل و تغییر جهت تایپ (افقی / عمودی)
+  const navRow = document.createElement("div");
+  navRow.className = "vk-row";
+
+  const dirBtn = document.createElement("button");
+  dirBtn.type = "button";
+  dirBtn.className = "vk-key vk-key-special nav-dir";
+  dirBtn.id = "vkDirBtn";
+  dirBtn.addEventListener("pointerdown", (e) => e.preventDefault());
+  dirBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    activeDir = activeDir === "across" ? "down" : "across";
+    updateVkDirBtn();
+    if (activeCellKey) {
+      const membership = cellWordMembership.get(activeCellKey) || {};
+      highlightWord(membership[activeDir]);
+    }
+  });
+
+  navRow.appendChild(dirBtn);
+  vkContainer.appendChild(navRow);
+  updateVkDirBtn();
+}
+
+function updateVkDirBtn() {
+  const dirBtn = document.getElementById("vkDirBtn");
+  if (dirBtn) {
+    dirBtn.innerHTML = `🔄 جهت تایپ: <b>${activeDir === "across" ? "افقی ➔" : "عمودی ⬇"}</b> (تغییر جهت)`;
+  }
+}
+
+function onVirtualKeyPress(key) {
+  if (!activeCellKey) {
+    if (currentPuzzle) {
+      for (let r = 0; r < currentPuzzle.rows; r++) {
+        for (let c = 0; c < currentPuzzle.cols; c++) {
+          if (currentPuzzle.grid[r][c] != null) {
+            focusCell(r, c);
+            break;
+          }
+        }
+        if (activeCellKey) break;
+      }
+    }
+    if (!activeCellKey) return;
+  }
+
+  const [r, c] = activeCellKey.split(",").map(Number);
+  const input = cellInputs.get(activeCellKey);
+
+  if (key === "BACKSPACE") {
+    if (input) {
+      if (input.value) {
+        input.value = "";
+        input.parentElement.classList.remove("correct", "incorrect");
+        input.classList.remove("wrong-cell");
+      } else {
+        moveToPrevCell(r, c);
+      }
+    }
+  } else {
+    if (input) {
+      input.value = key;
+      input.parentElement.classList.remove("correct", "incorrect");
+      input.classList.remove("wrong-cell");
+      moveToNextCell(r, c);
+      checkFullSolutionAuto();
+    }
+  }
+}
+
+function initVkToggleFab() {
+  const toggleVkFab = document.getElementById("toggleVkFab");
+  const virtualKeyboard = document.getElementById("virtualKeyboard");
+  const puzzleTab = document.getElementById("puzzleTab");
+
+  if (toggleVkFab && virtualKeyboard) {
+    toggleVkFab.addEventListener("click", () => {
+      const isCollapsed = virtualKeyboard.classList.toggle("collapsed");
+      if (puzzleTab) puzzleTab.classList.toggle("vk-collapsed", isCollapsed);
+      toggleVkFab.classList.toggle("active", !isCollapsed);
+      toggleVkFab.setAttribute("title", isCollapsed ? "نمایش کیبورد" : "مخفی‌کردن کیبورد");
+    });
+  }
+}
+
 // ---------- شروع اولیه ----------
 initThemeAndContrast();
 applySavedPuzzleOptions();
 syncShapeOptionsToDifficulty();
 initToolbarToggles();
+initVkToggleFab();
 generateNewPuzzle();
 renderWordBank();
 
