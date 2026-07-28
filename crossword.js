@@ -258,14 +258,29 @@ function solveClassicCrossword(wordList, opts = {}) {
 // چیدمان آزاد (غیرمربعی)
 function tryFreeformGenerate(wordList, opts = {}) {
   const maxWords = opts.maxWords || 12;
-  let candidates = shuffle(wordList.filter((w) => w.word && w.word.length >= 2));
+  const allValidWords = wordList.filter((w) => w.word && w.word.length >= 2);
+  const anchorMinLen = opts.anchorMinWordLength || 0;
+  // A hard cap on anchor length even when the caller doesn't set one: without it, a rare
+  // 15+ letter compound entry can become the very first anchor and instantly blow past
+  // any sane grid bound, locking out every later placement.
+  const anchorMaxLen = opts.anchorMaxWordLength || 11;
+  const anchorPool = allValidWords.filter((w) => w.word.length >= anchorMinLen && w.word.length <= anchorMaxLen);
+  let candidates = shuffle((anchorPool.length > 0 ? anchorPool : allValidWords).slice());
   candidates.sort((a, b) => b.word.length - a.word.length);
   candidates = candidates.slice(0, Math.max(maxWords * 4, 40));
+
+  // Target grid area assumes ~65% fill density once gaps are packed with filler words.
+  const anchorLengthSum = candidates.slice(0, maxWords).reduce((s, w) => s + w.word.length, 0);
+  const longestCandidate = candidates.reduce((m, w) => Math.max(m, w.word.length), 0);
+  const targetArea = Math.max(anchorLengthSum, 30) / 0.75;
+  const maxDimension = opts.maxDimension || Math.max(9, longestCandidate + 2, Math.ceil(Math.sqrt(targetArea)));
 
   const cells = new Map();
   const placed = [];
   const usedWords = new Set();
   const key = (r, c) => r + "," + c;
+  let boundsR = { min: 0, max: 0 };
+  let boundsC = { min: 0, max: 0 };
 
   function canPlace(word, row, col, dir) {
     let hasIntersection = false;
@@ -298,20 +313,29 @@ function tryFreeformGenerate(wordList, opts = {}) {
       const c = dir === "across" ? col + i : col;
       cells.set(key(r, c), { ch: word[i] });
     }
+    const endR = dir === "down" ? row + word.length - 1 : row;
+    const endC = dir === "across" ? col + word.length - 1 : col;
+    boundsR = { min: Math.min(boundsR.min, row, endR), max: Math.max(boundsR.max, row, endR) };
+    boundsC = { min: Math.min(boundsC.min, col, endC), max: Math.max(boundsC.max, col, endC) };
     placed.push({ word, clue, row, col, dir });
     usedWords.add(word);
   }
 
+  function boundsAfter(word, row, col, dir) {
+    const endR = dir === "down" ? row + word.length - 1 : row;
+    const endC = dir === "across" ? col + word.length - 1 : col;
+    const minR = Math.min(boundsR.min, row, endR);
+    const maxR = Math.max(boundsR.max, row, endR);
+    const minC = Math.min(boundsC.min, col, endC);
+    const maxC = Math.max(boundsC.max, col, endC);
+    return { rows: maxR - minR + 1, cols: maxC - minC + 1 };
+  }
+
   if (candidates.length === 0) return { grid: [], rows: 0, cols: 0, words: [], isSquare: false };
 
-  const first = candidates[0];
-  place(first.word, first.clue, 0, 0, "across");
-
-  for (let idx = 1; idx < candidates.length && placed.length < maxWords; idx++) {
-    const cand = candidates[idx];
-    if (usedWords.has(cand.word)) continue;
+  // تلاش برای جای‌دادن یک کلمه در بهترین تقاطع ممکن با خانه‌های موجود
+  function tryPlaceWord(cand) {
     const word = cand.word;
-
     const posOptions = [];
     for (let i = 0; i < word.length; i++) {
       const ch = word[i];
@@ -324,13 +348,52 @@ function tryFreeformGenerate(wordList, opts = {}) {
     }
     shuffle(posOptions);
 
-    for (const opt of posOptions) {
+    const withinBounds = posOptions.filter((opt) => {
+      const b = boundsAfter(word, opt.row, opt.col, opt.dir);
+      return b.rows <= maxDimension && b.cols <= maxDimension;
+    });
+    withinBounds.sort((a, b) => {
+      const ba = boundsAfter(word, a.row, a.col, a.dir);
+      const bb = boundsAfter(word, b.row, b.col, b.dir);
+      return ba.rows * ba.cols - bb.rows * bb.cols;
+    });
+
+    // فقط گزینه‌هایی که اندازه جدول را در محدوده مجاز نگه می‌دارند بررسی می‌شوند؛
+    // بدون این قید، یک جای‌گذاری خارج از محدوده باعث بزرگ‌شدن دائمی کادر می‌شود
+    // و همه تلاش‌های بعدی را نیز از محدوده خارج می‌کند.
+    for (const opt of withinBounds) {
       if (canPlace(word, opt.row, opt.col, opt.dir)) {
         place(word, cand.clue, opt.row, opt.col, opt.dir);
-        break;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // چندین دور تلاش روی چند دسته کلمه، تا کلماتی که در دور اول جا نشدند
+  // به‌محض بازشدن فضای جدید در دورهای بعدی دوباره امتحان شوند
+  function runPasses(pool, cap) {
+    let addedInPass = true;
+    while (addedInPass && placed.length < cap) {
+      addedInPass = false;
+      for (const cand of pool) {
+        if (placed.length >= cap) break;
+        if (usedWords.has(cand.word)) continue;
+        if (tryPlaceWord(cand)) addedInPass = true;
       }
     }
   }
+
+  const first = candidates[0];
+  place(first.word, first.clue, 0, 0, "across");
+
+  // مرحله اول: کلمات بلندتر که ستون فقرات جدول را می‌سازند
+  runPasses(candidates.slice(1), maxWords);
+
+  // مرحله دوم (چگالش): پرکردن شکاف‌های باقی‌مانده با کلمات کوتاه‌تر تا خانه‌های سیاه کاهش یابد
+  const fillerPool = shuffle(allValidWords.filter((w) => !usedWords.has(w.word)));
+  fillerPool.sort((a, b) => b.word.length - a.word.length);
+  runPasses(fillerPool, maxWords * 8);
 
   if (placed.length === 0) return { grid: [], rows: 0, cols: 0, words: [], isSquare: false };
 
@@ -380,7 +443,27 @@ function tryFreeformGenerate(wordList, opts = {}) {
 
 function generateCrossword(wordList, opts = {}) {
   if (opts.gridShape === "free") {
-    return tryFreeformGenerate(wordList, opts);
+    const attempts = Math.min(opts.attempts || 1, 8);
+    let best = null;
+    let bestFillRatio = -1;
+    for (let i = 0; i < attempts; i++) {
+      const candidate = tryFreeformGenerate(wordList, opts);
+      if (!candidate.rows) continue;
+      const area = candidate.rows * candidate.cols;
+      const filled = candidate.words.reduce((sum, w) => sum + w.word.length, 0);
+      const fillRatio = area > 0 ? filled / area : 0;
+      if (fillRatio > bestFillRatio) {
+        bestFillRatio = fillRatio;
+        best = candidate;
+      }
+    }
+    return best || tryFreeformGenerate(wordList, opts);
   }
-  return solveClassicCrossword(wordList, opts);
+
+  const minLen = opts.minWordLength || 0;
+  const maxLen = opts.maxWordLength || Infinity;
+  const words = (minLen > 0 || maxLen < Infinity)
+    ? wordList.filter((w) => w.word && w.word.length >= minLen && w.word.length <= maxLen)
+    : wordList;
+  return solveClassicCrossword(words, opts);
 }

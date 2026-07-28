@@ -68,6 +68,7 @@ function savePuzzleOptions() {
   try {
     const shapeSel = document.getElementById("gridShapeSelect");
     const categorySel = document.getElementById("categorySelect");
+    const difficultySel = document.getElementById("difficultySelect");
     const countInput = document.getElementById("wordCountInput");
     const blackCheck = document.getElementById("showBlackCellsCheck");
     const printCheck = document.getElementById("printAnswersCheck");
@@ -75,6 +76,7 @@ function savePuzzleOptions() {
     const opts = {
       gridShape: shapeSel ? shapeSel.value : "sq-9",
       category: categorySel ? categorySel.value : "all",
+      difficulty: difficultySel ? difficultySel.value : "normal",
       wordCount: countInput ? countInput.value : "۱۲",
       showBlackCells: blackCheck ? blackCheck.checked : true,
       printAnswers: printCheck ? printCheck.checked : true,
@@ -92,6 +94,9 @@ function applySavedPuzzleOptions() {
 
   const categorySel = document.getElementById("categorySelect");
   if (categorySel && saved.category !== undefined) categorySel.value = saved.category;
+
+  const difficultySel = document.getElementById("difficultySelect");
+  if (difficultySel && saved.difficulty !== undefined) difficultySel.value = saved.difficulty;
 
   const countInput = document.getElementById("wordCountInput");
   if (countInput && saved.wordCount !== undefined) countInput.value = saved.wordCount;
@@ -537,9 +542,23 @@ function setStatus(msg, kind) {
   el.className = "status-msg" + (kind ? " " + kind : "");
 }
 
+function isHardDifficulty() {
+  const sel = document.getElementById("difficultySelect");
+  return sel ? sel.value === "hard" : false;
+}
+
+function getDifficultyOptions() {
+  return isHardDifficulty() ? { anchorMinWordLength: 5, anchorMaxWordLength: 9 } : {};
+}
+
 function getGridOptions() {
   const sel = document.getElementById("gridShapeSelect");
   const selVal = sel ? sel.value : "sq-auto";
+  if (isHardDifficulty()) {
+    // Fixed-length classic templates can't be filled from long words only,
+    // so hard mode always uses the freeform layout (kept compact via maxDimension).
+    return { gridShape: "free" };
+  }
   if (selVal === "free") {
     return { gridShape: "free" };
   } else if (selVal.startsWith("sq-")) {
@@ -555,7 +574,7 @@ function generateNewPuzzle() {
   const categorySel = document.getElementById("categorySelect");
   const categoryKey = categorySel ? categorySel.value : "all";
 
-  const opts = { maxWords: count, attempts: 16, ...getGridOptions() };
+  const opts = { maxWords: count, attempts: 16, ...getGridOptions(), ...getDifficultyOptions() };
   const words = getCategoryWords(categoryKey);
 
   const puzzle = generateCrossword(words, opts);
@@ -598,7 +617,7 @@ function generateDailyPuzzle() {
   }
 
   const gridOpts = getGridOptions();
-  const opts = { maxWords: 12, attempts: 20, ...gridOpts };
+  const opts = { maxWords: 12, attempts: 20, ...gridOpts, ...getDifficultyOptions() };
   const puzzle = generateCrossword(allWords, opts);
 
   currentPuzzle = puzzle;
@@ -629,6 +648,14 @@ if (shapeSel) {
 const categorySel = document.getElementById("categorySelect");
 if (categorySel) {
   categorySel.addEventListener("change", () => {
+    savePuzzleOptions();
+    generateNewPuzzle();
+  });
+}
+
+const difficultySel = document.getElementById("difficultySelect");
+if (difficultySel) {
+  difficultySel.addEventListener("change", () => {
     savePuzzleOptions();
     generateNewPuzzle();
   });
@@ -1156,7 +1183,7 @@ if (startBatchPrintBtn) {
     const puzzles = [];
     const rawWordCount = parseInt(toEnDigits(document.getElementById("wordCountInput").value), 10);
     const wordCount = Math.min(30, Math.max(4, isNaN(rawWordCount) ? 12 : rawWordCount));
-    const gridOpts = getGridOptions();
+    const gridOpts = { ...getGridOptions(), ...getDifficultyOptions() };
     const allWords = getAllWords();
 
     for (let i = 1; i <= count; i++) {
