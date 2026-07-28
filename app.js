@@ -632,8 +632,8 @@ function generateNewPuzzle() {
   startTimer();
   updateBestTimeUI();
 
-  const shapeDesc = puzzle.isSquare ? `کلاسیک متقاطع ${toFaDigits(puzzle.rows)}×${toFaDigits(puzzle.cols)}` : `آزاد ${toFaDigits(puzzle.rows)}×${toFaDigits(puzzle.cols)}`;
-  setStatus(`جدول جدید (${shapeDesc}) با ${toFaDigits(puzzle.words.length)} کلمه متقاطع ساخته شد.`, "");
+  const dim = `${toFaDigits(puzzle.rows)}×${toFaDigits(puzzle.cols)}`;
+  setStatus(`✨ جدول ${dim} با ${toFaDigits(puzzle.words.length)} کلمه ساخته شد.`, "");
 }
 
 // ---------- جدول روزانه (Daily Puzzle) ----------
@@ -678,7 +678,7 @@ function generateDailyPuzzle() {
   const months = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
   const dateStr = `${toFaDigits(d.getDate())} ${months[d.getMonth()]}`;
 
-  setStatus(`📅 جدول اختصاصی امروز (${dateStr}) با ${toFaDigits(puzzle.words.length)} کلمه آماده شد.`, "");
+  setStatus(`📅 جدول امروز (${dateStr}) با ${toFaDigits(puzzle.words.length)} کلمه آماده شد.`, "");
 }
 
 document.getElementById("dailyPuzzleBtn").addEventListener("click", generateDailyPuzzle);
