@@ -214,8 +214,8 @@ button:active { transform: translateY(0); }
   border: none;
   background: transparent;
   text-align: center;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 800;
   color: var(--ink);
   border-radius: 6px;
 }
@@ -227,14 +227,14 @@ button:active { transform: translateY(0); }
 
 .cell-number {
   position: absolute;
-  top: 2px;
-  right: 3px;
-  font-size: 0.52rem;
-  font-weight: 700;
+  top: 1px;
+  right: 2px;
+  font-size: 0.62rem;
+  font-weight: 800;
   color: var(--accent-dark);
   pointer-events: none;
   line-height: 1;
-  opacity: 0.75;
+  opacity: 0.85;
 }
 
 .clues {
@@ -252,12 +252,13 @@ button:active { transform: translateY(0); }
 .clue-col h3 {
   margin-top: 0;
   color: var(--accent-dark);
-  font-size: 1rem;
+  font-size: 1.1rem;
+  font-weight: 800;
   border-bottom: 2px solid var(--line);
   padding-bottom: 8px;
 }
-.clue-col ol { padding-inline-start: 20px; margin: 0; }
-.clue-col li { margin-bottom: 9px; line-height: 1.45; cursor: pointer; font-size: 0.92rem; border-radius: 6px; transition: color 0.1s ease; }
+.clue-col ul, .clue-col ol { list-style: none; padding-inline-start: 0; margin: 0; }
+.clue-col li { margin-bottom: 9px; line-height: 1.5; cursor: pointer; font-size: 1rem; border-radius: 6px; transition: color 0.1s ease; }
 .clue-col li:hover { color: var(--accent-dark); }
 .clue-col li.active { color: var(--accent-dark); font-weight: 700; }
 .clue-col li b { color: var(--muted); font-weight: 700; margin-inline-end: 4px; }
@@ -320,14 +321,26 @@ tbody tr:hover { background: #faf9ff; }
 .print-area { display: none; }
 
 @media print {
-  @page { size: portrait; margin: 10mm; }
+  @page {
+    size: portrait;
+    margin: 6mm 8mm;
+  }
 
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  body { background: #fff !important; color: #000 !important; }
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   #app { display: none !important; }
 
   .print-area {
@@ -335,22 +348,66 @@ tbody tr:hover { background: #faf9ff; }
     direction: rtl;
     color: #000;
     font-family: "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
+    padding: 0;
+    margin: 0;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .print-page {
+    display: block !important;
+    position: relative;
+    box-sizing: border-box;
+    clear: both;
+    width: 100% !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .print-page:last-child,
+  .print-page:last-of-type {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .print-header {
-    text-align: center;
-    margin-bottom: 6mm;
-    border-bottom: 0.5mm solid #000;
-    padding-bottom: 3mm;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1.2mm;
+    margin-bottom: 3mm;
+    border-bottom: 0.3mm solid #000;
+    font-size: var(--print-header-font, 12pt);
+    white-space: nowrap;
+    line-height: 1.1;
   }
-  .print-header h1 { margin: 0 0 1mm; font-size: 18pt; font-weight: 800; }
-  .print-dedication { margin: 1mm 0 !important; font-size: 11pt !important; font-weight: 700 !important; color: #000 !important; }
-  .print-header p { margin: 0; font-size: 9.5pt; color: #333; }
+  .print-brand {
+    font-weight: 800;
+    font-size: 1.05em;
+  }
+  .print-meta {
+    font-weight: 500;
+    font-size: 0.85em;
+    color: #333;
+  }
+  .print-dedication {
+    font-weight: 700;
+    font-size: 0.82em;
+    color: #000;
+  }
+  .print-sep {
+    font-size: 0.8em;
+    opacity: 0.4;
+    margin: 0 3px;
+  }
 
   .print-grid {
     display: grid;
     gap: 0;
-    margin: 0 auto 8mm;
+    margin: 0 auto 4mm;
     justify-content: center;
     break-inside: avoid;
     page-break-inside: avoid;
@@ -362,7 +419,7 @@ tbody tr:hover { background: #faf9ff; }
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(8pt, calc(var(--print-cell, 7mm) * 0.55), 14pt);
+    font-size: var(--print-cell-font, 11pt);
     font-weight: 700;
     background: #fff;
     color: #000;
@@ -381,9 +438,9 @@ tbody tr:hover { background: #faf9ff; }
 
   .print-cell .num {
     position: absolute;
-    top: 0.3mm;
-    right: 0.5mm;
-    font-size: clamp(4pt, calc(var(--print-cell, 7mm) * 0.22), 6.5pt);
+    top: 0.2mm;
+    right: 0.4mm;
+    font-size: var(--print-num-font, 6pt);
     font-weight: 700;
     line-height: 1;
     color: #000;
@@ -391,19 +448,25 @@ tbody tr:hover { background: #faf9ff; }
 
   .print-clues {
     display: flex;
-    gap: 8mm;
+    gap: 6mm;
     break-inside: avoid;
     page-break-inside: avoid;
   }
   .print-clue-col { flex: 1; }
   .print-clue-col h3 {
-    font-size: 11pt;
+    font-size: var(--print-h3-font, 10pt);
     font-weight: 700;
     border-bottom: 0.4mm solid #000;
-    padding-bottom: 1.5mm;
-    margin: 0 0 2.5mm;
+    padding-bottom: 1mm;
+    margin: 0 0 1.5mm;
   }
-  .print-clue-col ol { margin: 0; padding-inline-start: 4mm; }
-  .print-clue-col li { font-size: 9pt; line-height: 1.45; margin-bottom: 1.5mm; break-inside: avoid; page-break-inside: avoid; }
+  .print-clue-col ul, .print-clue-col ol { list-style: none; margin: 0; padding-inline-start: 0; }
+  .print-clue-col li {
+    font-size: var(--print-clue-font, 9pt);
+    line-height: var(--print-clue-lh, 1.35);
+    margin-bottom: var(--print-clue-mb, 1.5mm);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
   .print-clue-col li b { font-weight: 700; margin-inline-end: 1mm; }
 }

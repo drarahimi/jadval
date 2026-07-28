@@ -60,7 +60,7 @@
       </label>
       <span class="toolbar-sep"></span>
       <label class="count-label print-answers-label">
-        <input id="printAnswersCheck" type="checkbox" />
+        <input id="printAnswersCheck" type="checkbox" checked />
         چاپ همراه با پاسخ
       </label>
       <button id="printBtn">🖨️ چاپ جدول</button>
@@ -73,11 +73,11 @@
       <div class="clues">
         <div class="clue-col">
           <h3>افقی</h3>
-          <ol id="acrossList"></ol>
+          <ul id="acrossList"></ul>
         </div>
         <div class="clue-col">
           <h3>عمودی</h3>
-          <ol id="downList"></ol>
+          <ul id="downList"></ul>
         </div>
       </div>
     </div>
@@ -108,24 +108,7 @@
   </section>
 </div>
 
-<div id="printArea" class="print-area" dir="rtl">
-  <div class="print-header">
-    <h1>جدولانه</h1>
-    <p class="print-dedication">❤️ تقدیم به پدر عزیزم</p>
-    <p id="printMeta"></p>
-  </div>
-  <div id="printGrid" class="print-grid"></div>
-  <div class="print-clues">
-    <div class="print-clue-col">
-      <h3>افقی</h3>
-      <ol id="printAcross"></ol>
-    </div>
-    <div class="print-clue-col">
-      <h3>عمودی</h3>
-      <ol id="printDown"></ol>
-    </div>
-  </div>
-</div>
+<div id="printArea" class="print-area" dir="rtl"></div>
 
 <script src="words.js"></script>
 <script src="crossword.js"></script>

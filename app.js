@@ -1,6 +1,7 @@
 // منطق رابط کاربری برنامه جدول تناوبی
 
 const CUSTOM_WORDS_KEY = "jadval_custom_words";
+const OPTIONS_KEY = "jadval_puzzle_options";
 
 const FA_DIGITS = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
 
@@ -10,6 +11,49 @@ function toFaDigits(value) {
 
 function toEnDigits(value) {
   return String(value).replace(/[۰-۹]/g, (d) => FA_DIGITS.indexOf(d));
+}
+
+function loadPuzzleOptions() {
+  try {
+    const raw = localStorage.getItem(OPTIONS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function savePuzzleOptions() {
+  try {
+    const shapeSel = document.getElementById("gridShapeSelect");
+    const countInput = document.getElementById("wordCountInput");
+    const blackCheck = document.getElementById("showBlackCellsCheck");
+    const printCheck = document.getElementById("printAnswersCheck");
+
+    const opts = {
+      gridShape: shapeSel ? shapeSel.value : "sq-9",
+      wordCount: countInput ? countInput.value : "۱۲",
+      showBlackCells: blackCheck ? blackCheck.checked : true,
+      printAnswers: printCheck ? printCheck.checked : true,
+    };
+    localStorage.setItem(OPTIONS_KEY, JSON.stringify(opts));
+  } catch (e) {}
+}
+
+function applySavedPuzzleOptions() {
+  const saved = loadPuzzleOptions();
+  if (!saved) return;
+
+  const shapeSel = document.getElementById("gridShapeSelect");
+  if (shapeSel && saved.gridShape !== undefined) shapeSel.value = saved.gridShape;
+
+  const countInput = document.getElementById("wordCountInput");
+  if (countInput && saved.wordCount !== undefined) countInput.value = saved.wordCount;
+
+  const blackCheck = document.getElementById("showBlackCellsCheck");
+  if (blackCheck && saved.showBlackCells !== undefined) blackCheck.checked = saved.showBlackCells;
+
+  const printCheck = document.getElementById("printAnswersCheck");
+  if (printCheck && saved.printAnswers !== undefined) printCheck.checked = saved.printAnswers;
 }
 
 let currentPuzzle = null; // { grid, rows, cols, words }
@@ -367,23 +411,34 @@ document.getElementById("newPuzzleBtn").addEventListener("click", generateNewPuz
 
 const shapeSel = document.getElementById("gridShapeSelect");
 if (shapeSel) {
-  shapeSel.addEventListener("change", generateNewPuzzle);
+  shapeSel.addEventListener("change", () => {
+    savePuzzleOptions();
+    generateNewPuzzle();
+  });
 }
 
 const blackCheck = document.getElementById("showBlackCellsCheck");
 if (blackCheck) {
   blackCheck.addEventListener("change", (e) => {
+    savePuzzleOptions();
     const gridEl = document.getElementById("grid");
-    const printGrid = document.getElementById("printGrid");
     const isChecked = e.target.checked ? "true" : "false";
     if (gridEl) gridEl.dataset.showBlackCells = isChecked;
-    if (printGrid) printGrid.dataset.showBlackCells = isChecked;
+    document.querySelectorAll(".print-grid").forEach((pg) => (pg.dataset.showBlackCells = isChecked));
+  });
+}
+
+const printCheck = document.getElementById("printAnswersCheck");
+if (printCheck) {
+  printCheck.addEventListener("change", () => {
+    savePuzzleOptions();
   });
 }
 
 document.getElementById("wordCountInput").addEventListener("input", (e) => {
   const digitsOnly = toEnDigits(e.target.value).replace(/[^0-9]/g, "");
   e.target.value = digitsOnly ? toFaDigits(digitsOnly) : "";
+  savePuzzleOptions();
 });
 
 document.getElementById("checkBtn").addEventListener("click", () => {
@@ -441,23 +496,104 @@ document.getElementById("clearBtn").addEventListener("click", () => {
 
 // ---------- چاپ ----------
 
-function buildPrintView(puzzle, includeAnswers) {
-  const printGrid = document.getElementById("printGrid");
-  printGrid.innerHTML = "";
-  if (!puzzle || puzzle.rows === 0) return;
-
+function buildPrintPage(puzzle, isAnswerKey) {
   const showBlack = document.getElementById("showBlackCellsCheck") ? document.getElementById("showBlackCellsCheck").checked : true;
+
+  const page = document.createElement("div");
+  page.className = "print-page";
+
+  const across = puzzle.words.filter((p) => p.dir === "across").sort((a, b) => a.number - b.number);
+  const down = puzzle.words.filter((p) => p.dir === "down").sort((a, b) => a.number - b.number);
+  const maxColClues = Math.max(across.length, down.length);
+  const gridDim = Math.max(puzzle.rows, puzzle.cols);
+
+  // 1. Dynamic Grid Cell Sizing
+  const maxWidthMm = 175;
+  let targetMaxHeightMm = 95;
+  let maxCellCap = 11;
+
+  if (gridDim <= 7) {
+    targetMaxHeightMm = 105;
+    maxCellCap = 14;
+  } else if (gridDim <= 9) {
+    targetMaxHeightMm = 98;
+    maxCellCap = 11.5;
+  } else if (gridDim <= 11) {
+    targetMaxHeightMm = 92;
+    maxCellCap = 9.2;
+  } else {
+    targetMaxHeightMm = 85;
+    maxCellCap = 7.8;
+  }
+
+  const byWidth = Math.floor((maxWidthMm / puzzle.cols) * 10) / 10;
+  const byHeight = Math.floor((targetMaxHeightMm / puzzle.rows) * 10) / 10;
+  const cellSize = Math.max(5, Math.min(maxCellCap, byWidth, byHeight));
+
+  // 2. Larger Cell Text & Corner Numbers Font Sizes
+  const cellFontSize = Math.max(10, Math.round(cellSize * 1.75 * 10) / 10);
+  const cellNumSize = Math.max(4.5, Math.round(cellSize * 0.7 * 10) / 10);
+
+  // 3. Larger Clue Font Size & Spacing based on maxColClues
+  let clueFontSize = 9.2;
+  let clueLineHeight = 1.35;
+  let clueMarginBottom = 1.8;
+  let h3FontSize = 11;
+  let titleFontSize = 15;
+
+  if (maxColClues <= 6) {
+    clueFontSize = 13;
+    clueLineHeight = 1.55;
+    clueMarginBottom = 4;
+    h3FontSize = 14;
+    titleFontSize = 18;
+  } else if (maxColClues <= 9) {
+    clueFontSize = 11.5;
+    clueLineHeight = 1.45;
+    clueMarginBottom = 3;
+    h3FontSize = 12.5;
+    titleFontSize = 16.5;
+  } else if (maxColClues <= 13) {
+    clueFontSize = 10.2;
+    clueLineHeight = 1.38;
+    clueMarginBottom = 2;
+    h3FontSize = 11.5;
+    titleFontSize = 15;
+  } else {
+    clueFontSize = 9.2;
+    clueLineHeight = 1.3;
+    clueMarginBottom = 1.4;
+    h3FontSize = 10.5;
+    titleFontSize = 14;
+  }
+
+  page.style.setProperty("--print-cell", cellSize + "mm");
+  page.style.setProperty("--print-cell-font", cellFontSize + "pt");
+  page.style.setProperty("--print-num-font", cellNumSize + "pt");
+  page.style.setProperty("--print-clue-font", clueFontSize + "pt");
+  page.style.setProperty("--print-clue-lh", clueLineHeight);
+  page.style.setProperty("--print-clue-mb", clueMarginBottom + "mm");
+  page.style.setProperty("--print-h3-font", h3FontSize + "pt");
+  page.style.setProperty("--print-header-font", titleFontSize + "pt");
+
+  const header = document.createElement("div");
+  header.className = "print-header";
+  header.innerHTML = `
+    <span class="print-brand">جدولانه${isAnswerKey ? " (پاسخ‌نامه)" : ""}</span>
+    <span class="print-sep">•</span>
+    <span class="print-meta">جدول کلمات متقاطع (${toFaDigits(puzzle.words.length)} کلمه)</span>
+    <span class="print-sep">•</span>
+    <span class="print-dedication">❤️ تقدیم به پدر عزیزم</span>
+  `;
+  page.appendChild(header);
+
+  const printGrid = document.createElement("div");
+  printGrid.className = "print-grid";
   printGrid.dataset.showBlackCells = showBlack ? "true" : "false";
   printGrid.dataset.isSquare = puzzle.isSquare ? "true" : "false";
 
-  const maxWidthMm = 180;
-  const maxHeightMm = 240;
-  const byWidth = Math.floor((maxWidthMm / puzzle.cols) * 10) / 10;
-  const byHeight = Math.floor((maxHeightMm / puzzle.rows) * 10) / 10;
-  const cellSize = Math.max(3.5, Math.min(9, byWidth, byHeight));
   printGrid.style.gridTemplateColumns = `repeat(${puzzle.cols}, ${cellSize}mm)`;
   printGrid.style.gridTemplateRows = `repeat(${puzzle.rows}, ${cellSize}mm)`;
-  printGrid.style.setProperty("--print-cell", cellSize + "mm");
 
   for (let r = 0; r < puzzle.rows; r++) {
     for (let c = 0; c < puzzle.cols; c++) {
@@ -474,43 +610,70 @@ function buildPrintView(puzzle, includeAnswers) {
           num.textContent = toFaDigits(numberKey.number);
           div.appendChild(num);
         }
-        if (includeAnswers) {
+        if (isAnswerKey) {
           div.appendChild(document.createTextNode(letter));
         }
       }
       printGrid.appendChild(div);
     }
   }
+  page.appendChild(printGrid);
 
-  const across = puzzle.words.filter((p) => p.dir === "across").sort((a, b) => a.number - b.number);
-  const down = puzzle.words.filter((p) => p.dir === "down").sort((a, b) => a.number - b.number);
+  const cluesDiv = document.createElement("div");
+  cluesDiv.className = "print-clues";
 
-  const printAcross = document.getElementById("printAcross");
-  const printDown = document.getElementById("printDown");
-  printAcross.innerHTML = "";
-  printDown.innerHTML = "";
+  const acrossCol = document.createElement("div");
+  acrossCol.className = "print-clue-col";
+  acrossCol.innerHTML = "<h3>افقی</h3>";
+  const acrossUl = document.createElement("ul");
   across.forEach((p) => {
     const li = document.createElement("li");
     li.innerHTML = `<b>${toFaDigits(p.number)}.</b> ${escapeHtml(p.clue)}`;
-    printAcross.appendChild(li);
+    acrossUl.appendChild(li);
   });
+  acrossCol.appendChild(acrossUl);
+
+  const downCol = document.createElement("div");
+  downCol.className = "print-clue-col";
+  downCol.innerHTML = "<h3>عمودی</h3>";
+  const downUl = document.createElement("ul");
   down.forEach((p) => {
     const li = document.createElement("li");
     li.innerHTML = `<b>${toFaDigits(p.number)}.</b> ${escapeHtml(p.clue)}`;
-    printDown.appendChild(li);
+    downUl.appendChild(li);
   });
+  downCol.appendChild(downUl);
 
-  document.getElementById("printMeta").textContent = `جدول کلمات متقاطع • ${toFaDigits(puzzle.words.length)} کلمه`;
+  cluesDiv.appendChild(acrossCol);
+  cluesDiv.appendChild(downCol);
+  page.appendChild(cluesDiv);
+
+  return page;
+}
+
+function buildPrintView(puzzle, includeAnswers) {
+  const printArea = document.getElementById("printArea");
+  printArea.innerHTML = "";
+  if (!puzzle || puzzle.rows === 0) return;
+
+  printArea.appendChild(buildPrintPage(puzzle, false));
+
+  if (includeAnswers) {
+    printArea.appendChild(buildPrintPage(puzzle, true));
+  }
 }
 
 document.getElementById("printBtn").addEventListener("click", () => {
   if (!currentPuzzle) return;
-  const includeAnswers = document.getElementById("printAnswersCheck").checked;
+  const includeAnswers = document.getElementById("printAnswersCheck") ? document.getElementById("printAnswersCheck").checked : false;
   buildPrintView(currentPuzzle, includeAnswers);
-  window.print();
+  setTimeout(() => {
+    window.print();
+  }, 50);
 });
 
 // شروع اولیه
+applySavedPuzzleOptions();
 generateNewPuzzle();
 renderWordBank();
 
