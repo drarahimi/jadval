@@ -548,17 +548,38 @@ function isHardDifficulty() {
 }
 
 function getDifficultyOptions() {
-  return isHardDifficulty() ? { anchorMinWordLength: 5, anchorMaxWordLength: 9 } : {};
+  // difficulty drives the classic template set; the anchor bounds only affect freeform layouts
+  return isHardDifficulty()
+    ? { difficulty: "hard", minWordLength: 5, anchorMinWordLength: 5, anchorMaxWordLength: 9 }
+    : {};
+}
+
+// اندازه‌هایی که در حالت سخت الگوی کلاسیک اعتبارسنجی‌شده دارند
+const HARD_SQUARE_SIZES = [7, 9, 11];
+
+// در حالت سخت، اندازه‌های بدون الگوی سخت غیرفعال می‌شوند تا انتخاب کاربر
+// بی‌سروصدا نادیده گرفته نشود.
+function syncShapeOptionsToDifficulty() {
+  const sel = document.getElementById("gridShapeSelect");
+  if (!sel) return;
+  const hard = isHardDifficulty();
+  let switched = false;
+  Array.from(sel.options).forEach((opt) => {
+    if (!opt.value.startsWith("sq-")) return;
+    const size = parseInt(opt.value.split("-")[1], 10);
+    const unsupported = hard && !HARD_SQUARE_SIZES.includes(size);
+    opt.disabled = unsupported;
+    if (unsupported && sel.value === opt.value) {
+      sel.value = "sq-11";
+      switched = true;
+    }
+  });
+  return switched;
 }
 
 function getGridOptions() {
   const sel = document.getElementById("gridShapeSelect");
   const selVal = sel ? sel.value : "sq-auto";
-  if (isHardDifficulty()) {
-    // Fixed-length classic templates can't be filled from long words only,
-    // so hard mode always uses the freeform layout (kept compact via maxDimension).
-    return { gridShape: "free" };
-  }
   if (selVal === "free") {
     return { gridShape: "free" };
   } else if (selVal.startsWith("sq-")) {
@@ -656,8 +677,12 @@ if (categorySel) {
 const difficultySel = document.getElementById("difficultySelect");
 if (difficultySel) {
   difficultySel.addEventListener("change", () => {
+    const switched = syncShapeOptionsToDifficulty();
     savePuzzleOptions();
     generateNewPuzzle();
+    if (switched) {
+      setStatus("در حالت سخت جدول ۱۳×۱۳ در دسترس نیست؛ اندازه به ۱۱×۱۱ تغییر کرد.", "");
+    }
   });
 }
 
@@ -1306,6 +1331,7 @@ function initToolbarToggles() {
 // ---------- شروع اولیه ----------
 initThemeAndContrast();
 applySavedPuzzleOptions();
+syncShapeOptionsToDifficulty();
 initToolbarToggles();
 generateNewPuzzle();
 renderWordBank();

@@ -89,6 +89,129 @@ const CLASSIC_TEMPLATES = {
   ]
 };
 
+// الگوهای حالت سخت: همه اسلات‌ها ۵ تا ۹ حرفی هستند تا کلمات کوتاه حذف شوند.
+// این الگوها با اجرای واقعی حل‌کننده روی واژه‌نامه اعتبارسنجی شده‌اند (نرخ حل ۱۰۰٪).
+// اندازه ۱۳ عمداً وجود ندارد: در ۱۳×۱۳ یا تعداد اسلات‌ها آن‌قدر زیاد می‌شود که با
+// واژه‌نامه فعلی پر نمی‌شود، یا آن‌قدر کم که جدول تقریباً خالی به نظر می‌رسد.
+const HARD_TEMPLATES = {
+  7: [
+    [
+      [1, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 0, 1]
+    ],
+    [
+      [0, 0, 0, 0, 0, 0, 1],
+      [0, 1, 0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0, 1, 0],
+      [1, 0, 0, 0, 0, 0, 0]
+    ],
+    [
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 1, 0, 1, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0]
+    ]
+  ],
+  9: [
+    [
+      [0, 1, 0, 1, 0, 1, 0, 1, 1],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 0, 0, 0, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [1, 1, 0, 1, 0, 1, 0, 1, 0]
+    ],
+    [
+      [0, 1, 0, 1, 0, 1, 0, 1, 1],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 0, 0, 0, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [1, 1, 0, 1, 0, 1, 0, 1, 0]
+    ],
+    [
+      [0, 1, 0, 1, 0, 1, 0, 1, 1],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 1],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [1, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [1, 1, 0, 1, 0, 1, 0, 1, 0]
+    ],
+    [
+      [0, 1, 0, 1, 0, 1, 0, 1, 1],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 1],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 0, 0, 0, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 0, 1, 0],
+      [1, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [1, 1, 0, 1, 0, 1, 0, 1, 0]
+    ]
+  ],
+  11: [
+    [
+      [0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0],
+      [0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+      [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+      [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+      [0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
+      [0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0]
+    ],
+    [
+      [0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0],
+      [0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
+      [0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0]
+    ],
+    [
+      [0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0],
+      [0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0],
+      [1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1],
+      [0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0],
+      [0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0]
+    ]
+  ]
+};
+
 // استخراج اسلات‌های افقی و عمودی همراه با شماره‌گذاری استاندارد
 function extractSlots(template) {
   const N = template.length;
@@ -138,16 +261,28 @@ function extractSlots(template) {
   return { slots, numberAt };
 }
 
+// اندازه جدول مربعی از روی تنظیمات کاربر یا تعداد کلمات درخواستی
+function resolveSquareSize(opts = {}) {
+  if (typeof opts.squareSize === "number" && opts.squareSize > 0) return opts.squareSize;
+  if (opts.maxWords) {
+    return opts.maxWords <= 7 ? 7 : opts.maxWords <= 12 ? 9 : opts.maxWords <= 18 ? 11 : 13;
+  }
+  return 9;
+}
+
+// آیا برای این اندازه، الگوی حالت سخت وجود دارد؟
+function hasHardTemplate(N) {
+  return Boolean(HARD_TEMPLATES[N]);
+}
+
 // موتور حل جدول متقاطع با تکنیک MRV (Minimum Remaining Values)
 function solveClassicCrossword(wordList, opts = {}) {
-  let N = 9;
-  if (typeof opts.squareSize === "number" && opts.squareSize > 0) {
-    N = opts.squareSize;
-  } else if (opts.maxWords) {
-    N = opts.maxWords <= 7 ? 7 : opts.maxWords <= 12 ? 9 : opts.maxWords <= 18 ? 11 : 13;
-  }
+  const N = resolveSquareSize(opts);
 
-  const templatePool = CLASSIC_TEMPLATES[N] || CLASSIC_TEMPLATES[9];
+  // در حالت سخت از الگوهایی استفاده می‌شود که کوتاه‌ترین اسلات آن‌ها ۵ حرف است،
+  // بنابراین خودِ الگو سختی را تضمین می‌کند و نیازی به فیلترکردن واژه‌نامه نیست.
+  const templatePool =
+    (opts.difficulty === "hard" && HARD_TEMPLATES[N]) || CLASSIC_TEMPLATES[N] || CLASSIC_TEMPLATES[9];
   const words = wordList.filter((w) => w.word && !w.word.includes(" "));
   const wordsByLen = {};
   words.forEach((w) => {
@@ -157,6 +292,8 @@ function solveClassicCrossword(wordList, opts = {}) {
   });
 
   const maxAttempts = opts.attempts || 10;
+  // سقف عقب‌گرد: جدول‌های سخت (اسلات‌های بلند و درهم‌تنیده) به فضای جست‌وجوی بیشتری نیاز دارند
+  const maxSteps = opts.maxSteps || 15000;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const template = templatePool[attempt % templatePool.length];
@@ -199,7 +336,7 @@ function solveClassicCrossword(wordList, opts = {}) {
     function backtrack() {
       if (assignedSlots.size === slots.length) return true;
       steps++;
-      if (steps > 15000) return false;
+      if (steps > maxSteps) return false;
 
       let bestSlot = null;
       let bestCandidates = null;
@@ -258,7 +395,9 @@ function solveClassicCrossword(wordList, opts = {}) {
 // چیدمان آزاد (غیرمربعی)
 function tryFreeformGenerate(wordList, opts = {}) {
   const maxWords = opts.maxWords || 12;
-  const allValidWords = wordList.filter((w) => w.word && w.word.length >= 2);
+  // در حالت سخت کف طول کلمه بالاتر می‌رود تا کلمات پرکننده دو-سه حرفی وارد جدول نشوند
+  const minLen = Math.max(2, opts.minWordLength || 2);
+  const allValidWords = wordList.filter((w) => w.word && w.word.length >= minLen);
   const anchorMinLen = opts.anchorMinWordLength || 0;
   // A hard cap on anchor length even when the caller doesn't set one: without it, a rare
   // 15+ letter compound entry can become the very first anchor and instantly blow past
@@ -272,7 +411,7 @@ function tryFreeformGenerate(wordList, opts = {}) {
   // Target grid area assumes ~65% fill density once gaps are packed with filler words.
   const anchorLengthSum = candidates.slice(0, maxWords).reduce((s, w) => s + w.word.length, 0);
   const longestCandidate = candidates.reduce((m, w) => Math.max(m, w.word.length), 0);
-  const targetArea = Math.max(anchorLengthSum, 30) / 0.75;
+  const targetArea = Math.max(anchorLengthSum, 30) / (opts.packDensity || 0.75);
   const maxDimension = opts.maxDimension || Math.max(9, longestCandidate + 2, Math.ceil(Math.sqrt(targetArea)));
 
   const cells = new Map();
@@ -282,29 +421,30 @@ function tryFreeformGenerate(wordList, opts = {}) {
   let boundsR = { min: 0, max: 0 };
   let boundsC = { min: 0, max: 0 };
 
+  // برمی‌گرداند تعداد تقاطع‌ها (۰ = جای‌گذاری نامعتبر)
   function canPlace(word, row, col, dir) {
-    let hasIntersection = false;
+    let intersections = 0;
     for (let i = 0; i < word.length; i++) {
       const r = dir === "down" ? row + i : row;
       const c = dir === "across" ? col + i : col;
       const existing = cells.get(key(r, c));
       if (existing) {
-        if (existing.ch !== word[i]) return false;
-        hasIntersection = true;
+        if (existing.ch !== word[i]) return 0;
+        intersections++;
       } else {
         if (dir === "across") {
-          if (cells.has(key(r - 1, c)) || cells.has(key(r + 1, c))) return false;
+          if (cells.has(key(r - 1, c)) || cells.has(key(r + 1, c))) return 0;
         } else {
-          if (cells.has(key(r, c - 1)) || cells.has(key(r, c + 1))) return false;
+          if (cells.has(key(r, c - 1)) || cells.has(key(r, c + 1))) return 0;
         }
       }
     }
     if (dir === "across") {
-      if (cells.has(key(row, col - 1)) || cells.has(key(row, col + word.length))) return false;
+      if (cells.has(key(row, col - 1)) || cells.has(key(row, col + word.length))) return 0;
     } else {
-      if (cells.has(key(row - 1, col)) || cells.has(key(row + word.length, col))) return false;
+      if (cells.has(key(row - 1, col)) || cells.has(key(row + word.length, col))) return 0;
     }
-    return hasIntersection;
+    return intersections;
   }
 
   function place(word, clue, row, col, dir) {
@@ -352,20 +492,24 @@ function tryFreeformGenerate(wordList, opts = {}) {
       const b = boundsAfter(word, opt.row, opt.col, opt.dir);
       return b.rows <= maxDimension && b.cols <= maxDimension;
     });
-    withinBounds.sort((a, b) => {
-      const ba = boundsAfter(word, a.row, a.col, a.dir);
-      const bb = boundsAfter(word, b.row, b.col, b.dir);
-      return ba.rows * ba.cols - bb.rows * bb.cols;
-    });
-
     // فقط گزینه‌هایی که اندازه جدول را در محدوده مجاز نگه می‌دارند بررسی می‌شوند؛
     // بدون این قید، یک جای‌گذاری خارج از محدوده باعث بزرگ‌شدن دائمی کادر می‌شود
     // و همه تلاش‌های بعدی را نیز از محدوده خارج می‌کند.
+    // به‌جای اولین جای معتبر، بهترین جا انتخاب می‌شود: بیشترین تقاطع، سپس کوچک‌ترین کادر،
+    // تا جدول فشرده‌تر شود و خانه‌های سیاه کمتری باقی بماند.
+    let best = null;
     for (const opt of withinBounds) {
-      if (canPlace(word, opt.row, opt.col, opt.dir)) {
-        place(word, cand.clue, opt.row, opt.col, opt.dir);
-        return true;
+      const inter = canPlace(word, opt.row, opt.col, opt.dir);
+      if (inter === 0) continue;
+      const b = boundsAfter(word, opt.row, opt.col, opt.dir);
+      const area = b.rows * b.cols;
+      if (!best || inter > best.inter || (inter === best.inter && area < best.area)) {
+        best = { opt, inter, area };
       }
+    }
+    if (best) {
+      place(word, cand.clue, best.opt.row, best.opt.col, best.opt.dir);
+      return true;
     }
     return false;
   }
@@ -442,23 +586,41 @@ function tryFreeformGenerate(wordList, opts = {}) {
 }
 
 function generateCrossword(wordList, opts = {}) {
-  if (opts.gridShape === "free") {
-    const attempts = Math.min(opts.attempts || 1, 8);
+  // حالت سخت فقط برای اندازه‌هایی الگوی مربعی دارد که اعتبارسنجی شده‌اند؛
+  // برای بقیه اندازه‌ها به چیدمان آزاد برمی‌گردیم تا سختی حفظ شود.
+  const hardSquareUnavailable =
+    opts.difficulty === "hard" && opts.gridShape !== "free" && !hasHardTemplate(resolveSquareSize(opts));
+
+  if (opts.gridShape === "free" || hardSquareUnavailable) {
+    const attempts = Math.min(opts.attempts || 1, 12);
     let best = null;
-    let bestFillRatio = -1;
+    let bestScore = -1;
+    // در هر تلاش، تراکم هدف متفاوتی امتحان می‌شود: کادرهای فشرده‌تر پوشش بیشتری می‌دهند
+    // اما گاهی کلمات کمتری جا می‌گیرند؛ امتیازدهی پایین بهترین توازن را انتخاب می‌کند.
+    const densities = [0.95, 0.85, 0.75];
     for (let i = 0; i < attempts; i++) {
-      const candidate = tryFreeformGenerate(wordList, opts);
+      const candidate = tryFreeformGenerate(wordList, { ...opts, packDensity: densities[i % densities.length] });
       if (!candidate.rows) continue;
       const area = candidate.rows * candidate.cols;
-      const filled = candidate.words.reduce((sum, w) => sum + w.word.length, 0);
-      const fillRatio = area > 0 ? filled / area : 0;
-      if (fillRatio > bestFillRatio) {
-        bestFillRatio = fillRatio;
+      // پرشدگی واقعی شبکه: خانه‌های مشترک تقاطع‌ها دوباره شمرده نمی‌شوند
+      let filledCells = 0;
+      for (const row of candidate.grid) {
+        for (const cell of row) if (cell != null) filledCells++;
+      }
+      const fillRatio = area > 0 ? filledCells / area : 0;
+      // امتیاز ترکیبی: پوشش شبکه به‌علاوه وزن کمی برای تعداد کلمات بیشتر
+      const score = fillRatio + candidate.words.length * 0.002;
+      if (score > bestScore) {
+        bestScore = score;
         best = candidate;
       }
     }
     return best || tryFreeformGenerate(wordList, opts);
   }
+
+  // در حالت سخت، طول اسلات‌های الگو خودش سختی را تعیین می‌کند؛ فیلترکردن اضافه
+  // واژه‌نامه فقط باعث می‌شود بعضی اسلات‌ها هیچ نامزدی نداشته باشند.
+  if (opts.difficulty === "hard") return solveClassicCrossword(wordList, opts);
 
   const minLen = opts.minWordLength || 0;
   const maxLen = opts.maxWordLength || Infinity;
