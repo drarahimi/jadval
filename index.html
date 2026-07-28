@@ -2,8 +2,17 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>جدولانه — جدول کلمات متقاطع هوشمند</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="alternate icon" type="image/png" href="icon-192.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#6d5bf6" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="جدولانه" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -16,7 +25,7 @@
       <span class="brand-icon">✦</span>
       <div>
         <h1>جدولانه</h1>
-        <p class="subtitle">جدول کلمات متقاطع هوشمند</p>
+        <p class="subtitle">جدول کلمات متقاطع هوشمند <span class="dedication-tag">❤️ تقدیم به پدر عزیزم</span></p>
       </div>
     </div>
     <nav class="tabs">
@@ -29,12 +38,26 @@
     <div class="toolbar">
       <button id="newPuzzleBtn" class="primary-btn">🔀 ساخت جدول جدید</button>
       <label class="count-label">
+        شکل جدول
+        <select id="gridShapeSelect" class="grid-shape-select">
+          <option value="sq-9" selected>📰 کلاسیک ۹×۹ (روزنامه‌ای)</option>
+          <option value="sq-7">📰 کلاسیک ۷×۷</option>
+          <option value="sq-11">📰 کلاسیک ۱۱×۱۱</option>
+          <option value="sq-13">📰 کلاسیک ۱۳×۱۳</option>
+          <option value="free">📐 آزاد (غیرمربعی)</option>
+        </select>
+      </label>
+      <label class="count-label">
         تعداد کلمات
         <input id="wordCountInput" type="text" inputmode="numeric" maxlength="2" value="۱۲" />
       </label>
       <button id="checkBtn">✓ بررسی پاسخ‌ها</button>
       <button id="revealBtn">نمایش پاسخ</button>
       <button id="clearBtn">پاک‌کردن</button>
+      <label class="count-label print-answers-label">
+        <input id="showBlackCellsCheck" type="checkbox" checked />
+        خانه‌های سیاه
+      </label>
       <span class="toolbar-sep"></span>
       <label class="count-label print-answers-label">
         <input id="printAnswersCheck" type="checkbox" />
@@ -88,6 +111,7 @@
 <div id="printArea" class="print-area" dir="rtl">
   <div class="print-header">
     <h1>جدولانه</h1>
+    <p class="print-dedication">❤️ تقدیم به پدر عزیزم</p>
     <p id="printMeta"></p>
   </div>
   <div id="printGrid" class="print-grid"></div>

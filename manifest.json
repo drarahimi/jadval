@@ -1,0 +1,37 @@
+{
+  "name": "جدولانه — جدول کلمات متقاطع هوشمند",
+  "short_name": "جدولانه",
+  "description": "جدول کلمات متقاطع کلاسیک و هوشمند فارسی به همراه بانک کلمات و قابلیت چاپ",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1f2430",
+  "theme_color": "#6d5bf6",
+  "dir": "rtl",
+  "lang": "fa",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

@@ -146,6 +146,10 @@ function renderGrid(puzzle) {
     return;
   }
 
+  gridEl.dataset.isSquare = puzzle.isSquare ? "true" : "false";
+  const showBlack = document.getElementById("showBlackCellsCheck") ? document.getElementById("showBlackCellsCheck").checked : true;
+  gridEl.dataset.showBlackCells = showBlack ? "true" : "false";
+
   gridEl.style.gridTemplateColumns = `repeat(${puzzle.cols}, 36px)`;
   gridEl.style.gridTemplateRows = `repeat(${puzzle.rows}, 36px)`;
 
@@ -331,19 +335,51 @@ function setStatus(msg, kind) {
   el.className = "status-msg" + (kind ? " " + kind : "");
 }
 
+function getGridOptions() {
+  const sel = document.getElementById("gridShapeSelect");
+  const selVal = sel ? sel.value : "sq-auto";
+  if (selVal === "free") {
+    return { gridShape: "free" };
+  } else if (selVal === "sq-auto") {
+    return { gridShape: "square", squareSize: "auto" };
+  } else if (selVal.startsWith("sq-")) {
+    const size = parseInt(selVal.split("-")[1], 10);
+    return { gridShape: "square", squareSize: size };
+  }
+  return { gridShape: "square", squareSize: "auto" };
+}
+
 function generateNewPuzzle() {
   const raw = parseInt(toEnDigits(document.getElementById("wordCountInput").value), 10);
   const count = Math.min(30, Math.max(4, isNaN(raw) ? 12 : raw));
+  const opts = { maxWords: count, attempts: 16, ...getGridOptions() };
   const all = getAllWords();
-  const puzzle = generateCrossword(all, { maxWords: count, attempts: 10 });
+  const puzzle = generateCrossword(all, opts);
   currentPuzzle = puzzle;
   buildCellWordMembership(puzzle);
   renderGrid(puzzle);
   renderClues(puzzle);
-  setStatus(`جدول جدید با ${toFaDigits(puzzle.words.length)} کلمه ساخته شد.`, "");
+  const shapeDesc = puzzle.isSquare ? `کلاسیک متقاطع ${toFaDigits(puzzle.rows)}×${toFaDigits(puzzle.cols)}` : `آزاد ${toFaDigits(puzzle.rows)}×${toFaDigits(puzzle.cols)}`;
+  setStatus(`جدول جدید (${shapeDesc}) با ${toFaDigits(puzzle.words.length)} کلمه متقاطع ساخته شد.`, "");
 }
 
 document.getElementById("newPuzzleBtn").addEventListener("click", generateNewPuzzle);
+
+const shapeSel = document.getElementById("gridShapeSelect");
+if (shapeSel) {
+  shapeSel.addEventListener("change", generateNewPuzzle);
+}
+
+const blackCheck = document.getElementById("showBlackCellsCheck");
+if (blackCheck) {
+  blackCheck.addEventListener("change", (e) => {
+    const gridEl = document.getElementById("grid");
+    const printGrid = document.getElementById("printGrid");
+    const isChecked = e.target.checked ? "true" : "false";
+    if (gridEl) gridEl.dataset.showBlackCells = isChecked;
+    if (printGrid) printGrid.dataset.showBlackCells = isChecked;
+  });
+}
 
 document.getElementById("wordCountInput").addEventListener("input", (e) => {
   const digitsOnly = toEnDigits(e.target.value).replace(/[^0-9]/g, "");
@@ -410,6 +446,10 @@ function buildPrintView(puzzle, includeAnswers) {
   printGrid.innerHTML = "";
   if (!puzzle || puzzle.rows === 0) return;
 
+  const showBlack = document.getElementById("showBlackCellsCheck") ? document.getElementById("showBlackCellsCheck").checked : true;
+  printGrid.dataset.showBlackCells = showBlack ? "true" : "false";
+  printGrid.dataset.isSquare = puzzle.isSquare ? "true" : "false";
+
   const maxWidthMm = 180;
   const maxHeightMm = 240;
   const byWidth = Math.floor((maxWidthMm / puzzle.cols) * 10) / 10;
@@ -473,3 +513,10 @@ document.getElementById("printBtn").addEventListener("click", () => {
 // شروع اولیه
 generateNewPuzzle();
 renderWordBank();
+
+// ثبت سرویس‌ورکر (PWA) برای نصب روی گوشی و کارکرد آفلاین
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}

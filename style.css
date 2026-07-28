@@ -69,7 +69,19 @@ button, input, select, textarea { font-family: inherit; }
   background-clip: text;
   color: transparent;
 }
-.subtitle { margin: 2px 0 0; color: var(--muted); font-size: 0.9rem; }
+.subtitle { margin: 2px 0 0; color: var(--muted); font-size: 0.9rem; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dedication-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #e11d48, #f43f5e);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
 
 .tabs { display: flex; gap: 6px; background: var(--panel); padding: 5px; border-radius: 999px; box-shadow: var(--shadow-sm); }
 .tab-btn {
@@ -134,6 +146,22 @@ button:active { transform: translateY(0); }
 }
 .count-label input:focus { outline: 2px solid var(--accent); border-color: transparent; }
 
+.count-label select.grid-shape-select {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+}
+.count-label select.grid-shape-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(109, 91, 246, 0.15);
+}
+
 .status-msg { min-height: 1.4em; text-align: center; font-weight: 700; margin: 4px 0 14px; }
 .status-msg.ok { color: var(--correct); }
 .status-msg.err { color: var(--incorrect); }
@@ -164,6 +192,15 @@ button:active { transform: translateY(0); }
 
 .cell { position: relative; width: 38px; height: 38px; background: transparent; }
 .cell.blocked { background: transparent; }
+.grid[data-show-black-cells="true"] .cell.blocked {
+  background: var(--cell-border);
+  border-radius: 6px;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+}
+.grid[data-show-black-cells="false"] .cell.blocked {
+  background: transparent !important;
+  box-shadow: none !important;
+}
 
 .cell.filled {
   background: var(--cell-filled);
@@ -283,13 +320,18 @@ tbody tr:hover { background: #faf9ff; }
 .print-area { display: none; }
 
 @media print {
-  @page { size: auto; margin: 12mm; }
+  @page { size: portrait; margin: 10mm; }
 
-  body { background: #fff; }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body { background: #fff !important; color: #000 !important; }
   #app { display: none !important; }
 
   .print-area {
-    display: block;
+    display: block !important;
     direction: rtl;
     color: #000;
     font-family: "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
@@ -297,53 +339,71 @@ tbody tr:hover { background: #faf9ff; }
 
   .print-header {
     text-align: center;
-    margin-bottom: 10mm;
+    margin-bottom: 6mm;
     border-bottom: 0.5mm solid #000;
-    padding-bottom: 4mm;
+    padding-bottom: 3mm;
   }
-  .print-header h1 { margin: 0 0 2mm; font-size: 20pt; }
-  .print-header p { margin: 0; font-size: 10pt; color: #333; }
+  .print-header h1 { margin: 0 0 1mm; font-size: 18pt; font-weight: 800; }
+  .print-dedication { margin: 1mm 0 !important; font-size: 11pt !important; font-weight: 700 !important; color: #000 !important; }
+  .print-header p { margin: 0; font-size: 9.5pt; color: #333; }
 
   .print-grid {
     display: grid;
-    gap: 0.6mm;
-    margin: 0 auto 10mm;
+    gap: 0;
+    margin: 0 auto 8mm;
     justify-content: center;
     break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .print-cell {
     position: relative;
-    border: 0.3mm solid #000;
+    border: 0.4mm solid #000;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(6pt, calc(var(--print-cell, 7mm) * 0.5), 11pt);
+    font-size: clamp(8pt, calc(var(--print-cell, 7mm) * 0.55), 14pt);
     font-weight: 700;
+    background: #fff;
+    color: #000;
+    box-sizing: border-box;
   }
-  .print-cell.blocked { border: none; background: transparent; }
+
+  .print-cell.blocked {
+    border: 0.4mm solid #000;
+    background: #000 !important;
+  }
+
+  .print-grid[data-show-black-cells="false"] .print-cell.blocked {
+    border: none !important;
+    background: transparent !important;
+  }
 
   .print-cell .num {
     position: absolute;
     top: 0.3mm;
-    right: 0.6mm;
-    font-size: clamp(3.5pt, calc(var(--print-cell, 7mm) * 0.2), 5.5pt);
+    right: 0.5mm;
+    font-size: clamp(4pt, calc(var(--print-cell, 7mm) * 0.22), 6.5pt);
     font-weight: 700;
+    line-height: 1;
+    color: #000;
   }
 
   .print-clues {
     display: flex;
-    gap: 10mm;
+    gap: 8mm;
     break-inside: avoid;
+    page-break-inside: avoid;
   }
   .print-clue-col { flex: 1; }
   .print-clue-col h3 {
-    font-size: 12pt;
-    border-bottom: 0.3mm solid #000;
-    padding-bottom: 2mm;
-    margin: 0 0 3mm;
+    font-size: 11pt;
+    font-weight: 700;
+    border-bottom: 0.4mm solid #000;
+    padding-bottom: 1.5mm;
+    margin: 0 0 2.5mm;
   }
-  .print-clue-col ol { margin: 0; padding-inline-start: 5mm; }
-  .print-clue-col li { font-size: 9.5pt; line-height: 1.5; margin-bottom: 2mm; break-inside: avoid; }
+  .print-clue-col ol { margin: 0; padding-inline-start: 4mm; }
+  .print-clue-col li { font-size: 9pt; line-height: 1.45; margin-bottom: 1.5mm; break-inside: avoid; page-break-inside: avoid; }
   .print-clue-col li b { font-weight: 700; margin-inline-end: 1mm; }
 }
