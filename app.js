@@ -496,7 +496,9 @@ document.getElementById("clearBtn").addEventListener("click", () => {
 
 // ---------- چاپ ----------
 
-function buildPrintPage(puzzle, isAnswerKey) {
+// ---------- چاپ ----------
+
+function buildPrintPage(puzzle, isAnswerKey, puzzleIndex = null, totalPuzzles = null) {
   const showBlack = document.getElementById("showBlackCellsCheck") ? document.getElementById("showBlackCellsCheck").checked : true;
 
   const page = document.createElement("div");
@@ -578,10 +580,23 @@ function buildPrintPage(puzzle, isAnswerKey) {
 
   const header = document.createElement("div");
   header.className = "print-header";
+
+  let brandText = "جدولانه";
+  if (isAnswerKey) {
+    brandText += puzzleIndex != null ? ` (پاسخ‌نامه شماره ${toFaDigits(puzzleIndex)})` : " (پاسخ‌نامه)";
+  } else if (puzzleIndex != null) {
+    brandText += ` (جدول شماره ${toFaDigits(puzzleIndex)})`;
+  }
+
+  let metaText = `جدول کلمات متقاطع (${toFaDigits(puzzle.words.length)} کلمه)`;
+  if (puzzleIndex != null && totalPuzzles != null) {
+    metaText = `${toFaDigits(puzzleIndex)} از ${toFaDigits(totalPuzzles)} • ${toFaDigits(puzzle.words.length)} کلمه`;
+  }
+
   header.innerHTML = `
-    <span class="print-brand">جدولانه${isAnswerKey ? " (پاسخ‌نامه)" : ""}</span>
+    <span class="print-brand">${brandText}</span>
     <span class="print-sep">•</span>
-    <span class="print-meta">جدول کلمات متقاطع (${toFaDigits(puzzle.words.length)} کلمه)</span>
+    <span class="print-meta">${metaText}</span>
     <span class="print-sep">•</span>
     <span class="print-dedication">❤️ تقدیم به پدر عزیزم</span>
   `;
@@ -663,6 +678,32 @@ function buildPrintView(puzzle, includeAnswers) {
   }
 }
 
+function buildBatchPrintView(puzzles, placement) {
+  const printArea = document.getElementById("printArea");
+  printArea.innerHTML = "";
+  const total = puzzles.length;
+
+  if (placement === "interleaved") {
+    puzzles.forEach((puzzle, idx) => {
+      const num = idx + 1;
+      printArea.appendChild(buildPrintPage(puzzle, false, num, total));
+      printArea.appendChild(buildPrintPage(puzzle, true, num, total));
+    });
+  } else if (placement === "end") {
+    puzzles.forEach((puzzle, idx) => {
+      printArea.appendChild(buildPrintPage(puzzle, false, idx + 1, total));
+    });
+    puzzles.forEach((puzzle, idx) => {
+      printArea.appendChild(buildPrintPage(puzzle, true, idx + 1, total));
+    });
+  } else {
+    // none
+    puzzles.forEach((puzzle, idx) => {
+      printArea.appendChild(buildPrintPage(puzzle, false, idx + 1, total));
+    });
+  }
+}
+
 document.getElementById("printBtn").addEventListener("click", () => {
   if (!currentPuzzle) return;
   const includeAnswers = document.getElementById("printAnswersCheck") ? document.getElementById("printAnswersCheck").checked : false;
@@ -671,6 +712,88 @@ document.getElementById("printBtn").addEventListener("click", () => {
     window.print();
   }, 50);
 });
+
+// ---------- مدال چاپ گروهی ----------
+
+const batchModal = document.getElementById("batchModal");
+const batchPrintBtn = document.getElementById("batchPrintBtn");
+const closeBatchModalBtn = document.getElementById("closeBatchModalBtn");
+const cancelBatchBtn = document.getElementById("cancelBatchBtn");
+const startBatchPrintBtn = document.getElementById("startBatchPrintBtn");
+const batchProgress = document.getElementById("batchProgress");
+const batchProgressText = document.getElementById("batchProgressText");
+
+function openBatchModal() {
+  if (batchModal) {
+    batchModal.hidden = false;
+    if (batchProgress) batchProgress.hidden = true;
+    if (startBatchPrintBtn) startBatchPrintBtn.disabled = false;
+  }
+}
+
+function closeBatchModal() {
+  if (batchModal) {
+    batchModal.hidden = true;
+  }
+}
+
+if (batchPrintBtn) batchPrintBtn.addEventListener("click", openBatchModal);
+if (closeBatchModalBtn) closeBatchModalBtn.addEventListener("click", closeBatchModal);
+if (cancelBatchBtn) cancelBatchBtn.addEventListener("click", closeBatchModal);
+
+if (batchModal) {
+  batchModal.addEventListener("click", (e) => {
+    if (e.target === batchModal) closeBatchModal();
+  });
+}
+
+if (startBatchPrintBtn) {
+  startBatchPrintBtn.addEventListener("click", async () => {
+    const countInput = document.getElementById("batchCountInput");
+    let count = parseInt(countInput ? countInput.value : "5", 10);
+    if (isNaN(count) || count < 1) count = 1;
+    if (count > 50) count = 50;
+
+    const placementRadio = document.querySelector('input[name="answerPlacement"]:checked');
+    const placement = placementRadio ? placementRadio.value : "interleaved";
+
+    batchProgress.hidden = false;
+    startBatchPrintBtn.disabled = true;
+
+    const puzzles = [];
+    const rawWordCount = parseInt(toEnDigits(document.getElementById("wordCountInput").value), 10);
+    const wordCount = Math.min(30, Math.max(4, isNaN(rawWordCount) ? 12 : rawWordCount));
+    const gridOpts = getGridOptions();
+    const allWords = getAllWords();
+
+    for (let i = 1; i <= count; i++) {
+      batchProgressText.textContent = `در حال ساخت جدول ${toFaDigits(i)} از ${toFaDigits(count)}...`;
+      await new Promise((resolve) => setTimeout(resolve, 30));
+
+      let puzzle = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const opts = { maxWords: wordCount, attempts: 16, ...gridOpts };
+        const candidate = generateCrossword(allWords, opts);
+        if (candidate && candidate.rows > 0 && candidate.words && candidate.words.length >= 3) {
+          puzzle = candidate;
+          break;
+        }
+      }
+      if (!puzzle) {
+        const opts = { maxWords: wordCount, attempts: 24, ...gridOpts };
+        puzzle = generateCrossword(allWords, opts);
+      }
+      puzzles.push(puzzle);
+    }
+
+    buildBatchPrintView(puzzles, placement);
+    closeBatchModal();
+
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  });
+}
 
 // شروع اولیه
 applySavedPuzzleOptions();

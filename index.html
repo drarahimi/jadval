@@ -64,6 +64,7 @@
         چاپ همراه با پاسخ
       </label>
       <button id="printBtn">🖨️ چاپ جدول</button>
+      <button id="batchPrintBtn" class="batch-print-btn">📚 چاپ گروهی / PDF</button>
     </div>
     <p id="statusMsg" class="status-msg"></p>
     <div class="puzzle-area">
@@ -106,6 +107,53 @@
       </table>
     </div>
   </section>
+</div>
+
+<div id="batchModal" class="modal-overlay" hidden>
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>📚 چاپ / خروجی PDF گروهی</h2>
+      <button id="closeBatchModalBtn" class="modal-close-btn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">تولید چندین جدول متقاطع متفاوت با تنظیمات فعلی برای چاپ یا دریافت فایل PDF یک‌جا.</p>
+      
+      <div class="form-group">
+        <label for="batchCountInput">تعداد جدول‌ها:</label>
+        <div class="number-input-wrap">
+          <input id="batchCountInput" type="number" min="1" max="50" value="5" />
+          <span class="input-unit">عدد</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>چیدمان پاسخ‌نامه‌ها:</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="answerPlacement" value="interleaved" checked />
+            بلافاصله بعد از هر جدول (جدول ۱ ← پاسخ ۱ ← جدول ۲ ...)
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="answerPlacement" value="end" />
+            در انتهای فایل (همه جدول‌ها ← همه پاسخ‌نامه‌ها)
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="answerPlacement" value="none" />
+            بدون پاسخ‌نامه (فقط جدول‌های خالی)
+          </label>
+        </div>
+      </div>
+
+      <div id="batchProgress" class="batch-progress" hidden>
+        <div class="spinner"></div>
+        <span id="batchProgressText">در حال ساخت جدول‌ها...</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="cancelBatchBtn" class="secondary-btn">انصراف</button>
+      <button id="startBatchPrintBtn" class="primary-btn">🖨️ تولید و دریافت PDF / چاپ</button>
+    </div>
+  </div>
 </div>
 
 <div id="printArea" class="print-area" dir="rtl"></div>
