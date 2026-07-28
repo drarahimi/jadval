@@ -28,6 +28,18 @@
         <p class="subtitle">جدول کلمات متقاطع هوشمند <span class="author-tag">کاری از افشین رحیمی</span> <span class="dedication-tag">❤️ تقدیم به پدر عزیزم</span></p>
       </div>
     </div>
+
+    <!-- Mobile Integrated Tools (Tools Button & Timer) -->
+    <div class="mobile-header-tools">
+      <button id="mobileControlToggleBtn" class="mobile-control-toggle-btn">
+        <span>🛠️ ابزار</span>
+        <span id="mobileControlArrow">▾</span>
+      </button>
+      <div class="timer-badge mini-timer">
+        <span id="mobileTimerText">⏱️ ۰۰:۰۰</span>
+      </div>
+    </div>
+
     <div class="header-actions">
       <button id="themeToggleBtn" class="icon-btn" title="تغییر تم (روز / شب)">🌙</button>
       <button id="contrastToggleBtn" class="icon-btn" title="حالت درشت‌خط / پررنگ">👓</button>
@@ -39,7 +51,7 @@
   </header>
 
   <section id="puzzleTab" class="tab-panel">
-    <div class="toolbar-container">
+    <div id="toolbarContainer" class="toolbar-container mobile-collapsed">
       <!-- Toolbar Row 1: Primary Actions, Settings Toggle & Stats -->
       <div class="toolbar-row primary-row">
         <div class="action-group">
@@ -148,6 +160,10 @@
     </div>
 
     <p id="statusMsg" class="status-msg"></p>
+
+    <div id="activeClueBar" class="active-clue-bar">
+      <span id="activeClueText">یک خانه را برای شروع لمس کنید</span>
+    </div>
 
     <div class="puzzle-area">
       <div id="gridWrap" class="grid-wrap">

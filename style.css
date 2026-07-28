@@ -94,9 +94,10 @@
 /* Big Font Mode - Buttons & Badges */
 [data-contrast="high"] button,
 [data-contrast="high"] .dropdown-trigger,
-[data-contrast="high"] .icon-toggle-btn {
+[data-contrast="high"] .icon-toggle-btn,
+[data-contrast="high"] .mobile-control-toggle-btn {
   font-size: 1.02rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 10px 18px;
 }
 
@@ -624,11 +625,349 @@ tbody tr:hover { background: #faf9ff; }
 .del-btn:hover { border-color: var(--incorrect); color: var(--incorrect); }
 .custom-tag { font-size: 0.68rem; color: var(--accent-dark); background: #ece8ff; padding: 3px 8px; border-radius: 999px; margin-inline-start: 8px; font-weight: 700; }
 
-@media (max-width: 640px) {
-  .app-header { justify-content: center; text-align: center; }
-  .cell { width: 30px; height: 30px; }
-  .cell.filled input { font-size: 0.92rem; }
-  .puzzle-area { flex-direction: column; }
+/* ---------- Active Clue Bar (Touch & Mobile Friendly) ---------- */
+.active-clue-bar {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  min-height: 44px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+.active-clue-bar b {
+  color: #ffe9b8;
+  font-weight: 800;
+  margin-inline-end: 6px;
+}
+
+/* Mobile Header Tools - Hidden by default on desktop */
+.mobile-header-tools {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-header-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mobile-control-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: var(--panel);
+    color: var(--accent-dark);
+    border: 1.5px solid var(--accent);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    height: 34px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    white-space: nowrap;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.15s ease;
+  }
+
+  [data-theme="dark"] .mobile-control-toggle-btn {
+    background: var(--panel);
+    color: #a5b4fc;
+    border-color: #6366f1;
+  }
+
+  .mobile-control-toggle-btn.active {
+    background: linear-gradient(135deg, #4f46e5, #3730a3);
+    color: #ffffff !important;
+    border-color: #3730a3;
+  }
+
+  [data-theme="dark"] .mobile-control-toggle-btn.active {
+    background: linear-gradient(135deg, #6366f1, #4338ca);
+    color: #ffffff !important;
+    border-color: #818cf8;
+  }
+
+  .mini-timer {
+    height: 34px;
+    min-width: auto;
+    padding: 0 8px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .toolbar-container.mobile-collapsed {
+    display: none !important;
+  }
+}
+
+/* ---------- Minimalist Mobile & Tablet Single-Line Header ---------- */
+@media (max-width: 768px) {
+  #app {
+    padding: 6px 6px 24px;
+  }
+
+  .app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .brand {
+    gap: 5px;
+    flex-shrink: 0;
+  }
+
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+    border-radius: 8px;
+  }
+
+  .app-header h1 {
+    font-size: 1.02rem;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  .subtitle {
+    display: none !important;
+  }
+
+  .header-actions {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .tabs {
+    height: 32px;
+    padding: 2px;
+  }
+
+  .tab-btn {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 0.76rem;
+  }
+}
+
+  .app-header {
+    margin-bottom: 14px;
+    gap: 10px;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+  }
+
+  .app-header h1 {
+    font-size: 1.35rem;
+  }
+
+  .author-tag, .dedication-tag {
+    display: none;
+  }
+
+  .toolbar-container {
+    padding: 10px 12px;
+    gap: 8px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+
+  .toolbar-row {
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .action-group, .stats-group {
+    justify-content: center;
+    gap: 6px;
+  }
+
+  button, .dropdown-trigger, .icon-toggle-btn {
+    padding: 7px 12px;
+    font-size: 0.84rem;
+    height: 38px;
+    box-sizing: border-box;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .timer-badge, .best-time-badge {
+    height: 34px;
+    min-width: 90px;
+    padding: 0 10px;
+    font-size: 0.82rem;
+  }
+
+  .puzzle-area {
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .grid-wrap {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .clues {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    gap: 16px;
+    min-width: auto;
+  }
+
+  .clue-col li {
+    padding: 4px 6px;
+    font-size: 0.92rem;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-footer {
+    margin-top: 24px;
+    padding-top: 14px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 600px) {
+  #app {
+    padding: 8px 8px 24px;
+  }
+
+  .app-header {
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+    touch-action: manipulation;
+  }
+
+  .tab-btn {
+    padding: 0 14px;
+    height: 32px;
+    font-size: 0.84rem;
+  }
+
+  .tabs {
+    height: 38px;
+  }
+
+  .toolbar-container {
+    padding: 8px;
+  }
+
+  .action-group {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .action-group button, .action-group .dropdown-trigger {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+  }
+
+  .grid-wrap {
+    padding: 8px 4px;
+    border-radius: 12px;
+  }
+
+  .cell {
+    width: clamp(28px, 9vw, 38px);
+    height: clamp(28px, 9vw, 38px);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cell.filled input {
+    font-size: clamp(0.9rem, 4vw, 1.25rem);
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .cell-number {
+    font-size: 0.55rem;
+    right: 1px;
+    top: 0px;
+  }
+
+  .active-clue-bar {
+    font-size: 0.86rem;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+  }
+
+  .clues {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .clue-col h3 {
+    font-size: 1rem;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  }
 }
 
 /* ---------- Print controls (screen) ---------- */
@@ -893,9 +1232,13 @@ tbody tr:hover { background: #faf9ff; }
     padding-bottom: 1.2mm;
     margin-bottom: 3mm;
     border-bottom: 0.3mm solid #000;
-    font-size: var(--print-header-font, 12pt);
+    font-size: var(--print-header-font, 11pt);
+    line-height: 1.2;
+    gap: 1mm 2mm;
+    flex-wrap: wrap;
+  }
+  .print-header > span {
     white-space: nowrap;
-    line-height: 1.1;
   }
   .print-brand {
     font-weight: 800;
@@ -919,7 +1262,7 @@ tbody tr:hover { background: #faf9ff; }
   .print-sep {
     font-size: 0.8em;
     opacity: 0.4;
-    margin: 0 3px;
+    margin: 0 1px;
   }
 
   .print-grid {
@@ -1036,6 +1379,14 @@ tbody tr:hover { background: #faf9ff; }
   }
   .booklet-cover-page .cover-meta { font-size: 11pt; color: #4b5563; font-weight: 600; }
   .booklet-cover-page .cover-author { font-size: 12.5pt; color: #111827; font-weight: 700; }
+
+  .print-blank-page {
+    min-height: 255mm;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
 
 /* ---------- Header Actions & Controls ---------- */

@@ -136,14 +136,30 @@ function stopTimer() {
 }
 
 function updateTimerUI() {
+  const t = `⏱️ ${formatTime(elapsedSeconds)}`;
   const el = document.getElementById("timerText");
-  if (el) el.textContent = `⏱️ ${formatTime(elapsedSeconds)}`;
+  if (el) el.textContent = t;
+  const mEl = document.getElementById("mobileTimerText");
+  if (mEl) mEl.textContent = t;
 }
 
 document.getElementById("timerPauseBtn").addEventListener("click", () => {
   isTimerRunning = !isTimerRunning;
   document.getElementById("timerPauseBtn").textContent = isTimerRunning ? "⏸️" : "▶️";
 });
+
+// ---------- همگام‌سازی و مدیریت منوی کنترل موبایل ----------
+const mobileControlToggleBtn = document.getElementById("mobileControlToggleBtn");
+const toolbarContainer = document.getElementById("toolbarContainer");
+const mobileControlArrow = document.getElementById("mobileControlArrow");
+
+if (mobileControlToggleBtn && toolbarContainer) {
+  mobileControlToggleBtn.addEventListener("click", () => {
+    const isCollapsed = toolbarContainer.classList.toggle("mobile-collapsed");
+    if (mobileControlArrow) mobileControlArrow.textContent = isCollapsed ? "▾" : "▴";
+    mobileControlToggleBtn.classList.toggle("active", !isCollapsed);
+  });
+}
 
 function getBestTimes() {
   try {
@@ -415,13 +431,23 @@ function clearHighlights() {
 
 function highlightWord(p) {
   clearHighlights();
-  if (!p) return;
+  const barText = document.getElementById("activeClueText");
+  if (!p) {
+    if (barText) barText.innerHTML = "یک خانه را برای شروع لمس کنید";
+    return;
+  }
   wordCells(p).forEach(([r, c]) => {
     const input = cellInputs.get(r + "," + c);
     if (input) input.parentElement.classList.add("highlight");
   });
   const li = document.querySelector(`li[data-dir="${p.dir}"][data-num="${p.number}"]`);
-  if (li) li.classList.add("active");
+  if (li) {
+    li.classList.add("active");
+  }
+  if (barText) {
+    const dirFa = p.dir === "across" ? "افقی" : "عمودی";
+    barText.innerHTML = `<b>${toFaDigits(p.number)} (${dirFa}):</b> ${escapeHtml(p.clue)}`;
+  }
 }
 
 function onCellFocus(r, c) {
@@ -955,38 +981,38 @@ function buildPrintPage(puzzle, isAnswerKey, puzzleIndex = null, totalPuzzles = 
   let clueLineHeight = 1.38;
   let clueMarginBottom = 1.8;
   let h3FontSize = 12.5;
-  let titleFontSize = 17;
+  let titleFontSize = 11.5;
 
   if (maxColClues <= 6) {
     clueFontSize = 14.5;
     clueLineHeight = 1.60;
     clueMarginBottom = 4.5;
-    h3FontSize = 16;
-    titleFontSize = 19.5;
+    h3FontSize = 15;
+    titleFontSize = 12.5;
   } else if (maxColClues <= 9) {
     clueFontSize = 13.0;
     clueLineHeight = 1.50;
     clueMarginBottom = 3.5;
-    h3FontSize = 14.5;
-    titleFontSize = 18;
+    h3FontSize = 14;
+    titleFontSize = 12.0;
   } else if (maxColClues <= 13) {
     clueFontSize = 12.0;
     clueLineHeight = 1.44;
     clueMarginBottom = 2.4;
-    h3FontSize = 13.5;
-    titleFontSize = 16.5;
+    h3FontSize = 13;
+    titleFontSize = 11.5;
   } else if (maxColClues <= 20) {
     clueFontSize = 11.0;
     clueLineHeight = 1.35;
     clueMarginBottom = 1.6;
     h3FontSize = 12.5;
-    titleFontSize = 15;
+    titleFontSize = 11.0;
   } else {
     clueFontSize = 10.2;
     clueLineHeight = 1.28;
     clueMarginBottom = 1.2;
     h3FontSize = 11.5;
-    titleFontSize = 14.5;
+    titleFontSize = 10.5;
   }
 
   page.style.setProperty("--print-cell", cellSize + "mm");
@@ -1130,6 +1156,11 @@ function buildBatchPrintView(puzzles, placement, includeCover = true) {
       </div>
     `;
     printArea.appendChild(cover);
+
+    const blankPage = document.createElement("div");
+    blankPage.className = "print-page print-blank-page";
+    blankPage.innerHTML = "&nbsp;";
+    printArea.appendChild(blankPage);
   }
 
   if (placement === "interleaved") {
