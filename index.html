@@ -25,7 +25,7 @@
       <span class="brand-icon">✦</span>
       <div>
         <h1>جدولانه</h1>
-        <p class="subtitle">جدول کلمات متقاطع هوشمند <span class="dedication-tag">❤️ تقدیم به پدر عزیزم</span></p>
+        <p class="subtitle">جدول کلمات متقاطع هوشمند <span class="author-tag">کاری از افشین رحیمی</span> <span class="dedication-tag">❤️ تقدیم به پدر عزیزم</span></p>
       </div>
     </div>
     <div class="header-actions">
@@ -39,74 +39,104 @@
   </header>
 
   <section id="puzzleTab" class="tab-panel">
-    <div class="toolbar">
-      <button id="newPuzzleBtn" class="primary-btn">🔀 ساخت جدول جدید</button>
-      <button id="dailyPuzzleBtn" class="secondary-btn">📅 جدول امروز</button>
+    <div class="toolbar-container">
+      <!-- Toolbar Row 1: Primary Actions, Settings Toggle & Stats -->
+      <div class="toolbar-row primary-row">
+        <div class="action-group">
+          <button id="newPuzzleBtn" class="primary-btn">🔀 ساخت جدول جدید</button>
+          <button id="dailyPuzzleBtn" class="secondary-btn">📅 جدول امروز</button>
+          <button id="toggleConfigBtn" class="icon-toggle-btn" title="تنظیمات ابعاد، موضوع و کلمات">
+            ⚙️ تنظیمات جدول
+          </button>
+        </div>
 
-      <label class="count-label">
-        شکل جدول
-        <select id="gridShapeSelect" class="grid-shape-select">
-          <option value="sq-9" selected>📰 کلاسیک ۹×۹ (روزنامه‌ای)</option>
-          <option value="sq-7">📰 کلاسیک ۷×۷</option>
-          <option value="sq-11">📰 کلاسیک ۱۱×۱۱</option>
-          <option value="sq-13">📰 کلاسیک ۱۳×۱۳</option>
-          <option value="free">📐 آزاد (غیرمربعی)</option>
-        </select>
-      </label>
-
-      <label class="count-label">
-        موضوع
-        <select id="categorySelect" class="grid-shape-select">
-          <option value="all" selected>✨ همه موضوعات</option>
-          <option value="science">🔬 علوم و فناوری</option>
-          <option value="geography">🌍 جغرافیا و طبیعت</option>
-          <option value="history">📜 تاریخ و فرهنگ</option>
-          <option value="culture">🎭 هنر، ادبیات و مشاهیر</option>
-          <option value="food">🍲 خوراک و سوغات ایرانی</option>
-        </select>
-      </label>
-
-      <label class="count-label">
-        تعداد کلمات
-        <input id="wordCountInput" type="text" inputmode="numeric" maxlength="2" value="۱۲" />
-      </label>
-
-      <div class="timer-badge">
-        <span id="timerText">⏱️ ۰۰:۰۰</span>
-        <button id="timerPauseBtn" class="timer-btn" title="توقف / ادامه زمان">⏸️</button>
+        <div class="stats-group">
+          <div class="timer-badge">
+            <span id="timerText">⏱️ ۰۰:۰۰</span>
+            <button id="timerPauseBtn" class="timer-btn" title="توقف / ادامه زمان">⏸️</button>
+          </div>
+          <div id="bestTimeBadge" class="best-time-badge" title="بهترین زمان ثبت‌شده">
+            <span>🏆</span>
+            <span id="bestTimeText">--:--</span>
+          </div>
+        </div>
       </div>
 
-      <div id="bestTimeBadge" class="best-time-badge" title="بهترین زمان ثبت‌شده">
-        <span>🏆</span>
-        <span id="bestTimeText">--:--</span>
+      <!-- Collapsible Settings Panel -->
+      <div id="configPanel" class="config-panel" hidden>
+        <div class="config-grid">
+          <label class="config-field">
+            <span>شکل جدول:</span>
+            <select id="gridShapeSelect" class="grid-shape-select">
+              <option value="sq-9" selected>📰 کلاسیک ۹×۹ (روزنامه‌ای)</option>
+              <option value="sq-7">📰 کلاسیک ۷×۷</option>
+              <option value="sq-11">📰 کلاسیک ۱۱×۱۱</option>
+              <option value="sq-13">📰 کلاسیک ۱۳×۱۳</option>
+              <option value="free">📐 آزاد (غیرمربعی)</option>
+            </select>
+          </label>
+
+          <label class="config-field">
+            <span>موضوع:</span>
+            <select id="categorySelect" class="grid-shape-select">
+              <option value="all" selected>✨ همه موضوعات</option>
+              <option value="science">🔬 علوم و فناوری</option>
+              <option value="geography">🌍 جغرافیا و طبیعت</option>
+              <option value="history">📜 تاریخ و فرهنگ</option>
+              <option value="culture">🎭 هنر، ادبیات و مشاهیر</option>
+              <option value="food">🍲 خوراک و سوغات ایرانی</option>
+            </select>
+          </label>
+
+          <label class="config-field">
+            <span>تعداد کلمات:</span>
+            <input id="wordCountInput" type="text" inputmode="numeric" maxlength="2" value="۱۲" />
+          </label>
+
+          <div class="config-options">
+            <label class="checkbox-field">
+              <input id="showBlackCellsCheck" type="checkbox" checked />
+              خانه‌های سیاه
+            </label>
+            <label class="checkbox-field">
+              <input id="printAnswersCheck" type="checkbox" checked />
+              چاپ با پاسخ
+            </label>
+          </div>
+        </div>
       </div>
 
+      <!-- Toolbar Row 2: Solving Actions, Hints Dropdown & Print Dropdown -->
+      <div class="toolbar-row action-row">
+        <div class="action-group">
+          <button id="checkBtn" class="primary-action-btn">✓ بررسی کامل</button>
 
-      <span class="toolbar-sep"></span>
+          <!-- Hints Dropdown -->
+          <div class="dropdown">
+            <button id="hintsMenuBtn" class="dropdown-trigger">💡 راهنمایی ▾</button>
+            <div class="dropdown-menu">
+              <button id="hintLetterBtn" class="dropdown-item">💡 راهنمایی حرف</button>
+              <button id="hintWordBtn" class="dropdown-item">🔍 راهنمایی کلمه</button>
+              <button id="checkErrorsBtn" class="dropdown-item danger-item">❌ بررسی اشتباهات</button>
+            </div>
+          </div>
 
-      <button id="hintLetterBtn" class="hint-btn">💡 راهنمایی حرف</button>
-      <button id="hintWordBtn" class="hint-btn">🔍 راهنمایی کلمه</button>
-      <button id="checkErrorsBtn" class="hint-btn danger-hint">❌ بررسی اشتباهات</button>
+          <button id="revealBtn">نمایش پاسخ</button>
+          <button id="clearBtn">پاک‌کردن</button>
+        </div>
 
-      <button id="checkBtn">✓ بررسی کامل</button>
-      <button id="revealBtn">نمایش پاسخ</button>
-      <button id="clearBtn">پاک‌کردن</button>
-
-      <span class="toolbar-sep"></span>
-
-      <label class="count-label print-answers-label">
-        <input id="showBlackCellsCheck" type="checkbox" checked />
-        خانه‌های سیاه
-      </label>
-
-      <label class="count-label print-answers-label">
-        <input id="printAnswersCheck" type="checkbox" checked />
-        چاپ همراه با پاسخ
-      </label>
-
-      <button id="exportPngBtn" class="export-btn">🖼️ دریافت عکس PNG</button>
-      <button id="printBtn">🖨️ چاپ جدول</button>
-      <button id="batchPrintBtn" class="batch-print-btn">📚 چاپ گروهی / کتابچه</button>
+        <!-- Print & Export Dropdown -->
+        <div class="action-group">
+          <div class="dropdown">
+            <button id="exportMenuBtn" class="dropdown-trigger export-trigger">🖨️ خروجی و چاپ ▾</button>
+            <div class="dropdown-menu dropdown-menu-left">
+              <button id="exportPngBtn" class="dropdown-item">🖼️ دریافت عکس PNG</button>
+              <button id="printBtn" class="dropdown-item">🖨️ چاپ جدول جاری</button>
+              <button id="batchPrintBtn" class="dropdown-item highlight-item">📚 چاپ گروهی / کتابچه PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <p id="statusMsg" class="status-msg"></p>
@@ -156,6 +186,10 @@
       </table>
     </div>
   </section>
+
+  <footer class="app-footer">
+    <p>جدولانه — کاری از افشین رحیمی <span class="footer-sep">—</span> ❤️ تقدیم به پدر عزیزم</p>
+  </footer>
 </div>
 
 <div id="batchModal" class="modal-overlay" hidden>

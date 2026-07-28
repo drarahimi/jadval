@@ -959,14 +959,16 @@ function buildPrintPage(puzzle, isAnswerKey, puzzleIndex = null, totalPuzzles = 
 
   let metaText = `جدول کلمات متقاطع (${toFaDigits(puzzle.words.length)} کلمه)`;
   if (puzzleIndex != null && totalPuzzles != null) {
-    metaText = `${toFaDigits(puzzleIndex)} از ${toFaDigits(totalPuzzles)} • ${toFaDigits(puzzle.words.length)} کلمه`;
+    metaText = `${toFaDigits(puzzleIndex)} از ${toFaDigits(totalPuzzles)} — ${toFaDigits(puzzle.words.length)} کلمه`;
   }
 
   header.innerHTML = `
     <span class="print-brand">${brandText}</span>
-    <span class="print-sep">•</span>
+    <span class="print-sep">—</span>
     <span class="print-meta">${metaText}</span>
-    <span class="print-sep">•</span>
+    <span class="print-sep">—</span>
+    <span class="print-author">کاری از افشین رحیمی</span>
+    <span class="print-sep">—</span>
     <span class="print-dedication">❤️ تقدیم به پدر عزیزم</span>
   `;
   page.appendChild(header);
@@ -1042,6 +1044,16 @@ function buildPrintView(puzzle, includeAnswers) {
   }
 }
 
+const INSPIRING_QUOTES = [
+  { text: "ذهن مانند چتر نجات است؛ فقط زمانی کار می‌کند که باز باشد.", author: "آلبرت اینشتین" },
+  { text: "توانا بود هر که دانا بود / ز دانش دل پیر برنا بود", author: "فردوسی" },
+  { text: "اندیشه نمودن و حل معما، کلید گشایش پویایی ذهن و سلامت روان است.", author: "ابوعلی سینا" },
+  { text: "یادگیری و به چالش کشیدن ذهن، بزرگ‌ترین پادزهر پیری اندیشه است.", author: "سقراط" },
+  { text: "لذت کشف پاسخ در معماها، همان شادیِ دستیابی به دانایی است.", author: "دکتر محمود حسابی" },
+  { text: "تفکر، ورزش روح است و جدول متقاطع، بهترین میدان این ورزش شاداب.", author: "فرانسیس بیکن" },
+  { text: "هیچ‌چیز مانند ورزش فکری و حل جدول، طراوت اندیشه را زنده نگه نمی‌دارد.", author: "مریم میرزاخانی" }
+];
+
 function buildBatchPrintView(puzzles, placement, includeCover = true) {
   const printArea = document.getElementById("printArea");
   printArea.innerHTML = "";
@@ -1051,11 +1063,19 @@ function buildBatchPrintView(puzzles, placement, includeCover = true) {
     const cover = document.createElement("div");
     cover.className = "booklet-cover-page";
     const d = new Date();
+    const randomQuote = INSPIRING_QUOTES[Math.floor(Math.random() * INSPIRING_QUOTES.length)];
     cover.innerHTML = `
-      <h1>📚 کتابچه جدول‌های متقاطع روزنامه‌ای</h1>
+      <h1>کتابچه جدول‌های متقاطع روزنامه‌ای</h1>
       <h2>مجموعه ${toFaDigits(total)} جدول متقاطع روزنامه‌ای با پاسخ‌نامه</h2>
       <div class="cover-dedication">❤️ تقدیم با عشق به پدر عزیزم</div>
-      <div class="cover-meta">طراحی و تولیدشده توسط سامانه جدولانه • ${toFaDigits(d.getFullYear())}</div>
+      <div class="cover-quote-card">
+        <p class="cover-quote-text">${randomQuote.text}</p>
+        <p class="cover-quote-author">— ${randomQuote.author}</p>
+      </div>
+      <div class="cover-footer">
+        <div class="cover-meta">طراحی و تولیدشده توسط سامانه جدولانه — ${toFaDigits(d.getFullYear())}</div>
+        <div class="cover-author">کاری از افشین رحیمی</div>
+      </div>
     `;
     printArea.appendChild(cover);
   }
@@ -1216,15 +1236,58 @@ function launchConfetti() {
   requestAnimationFrame(animate);
 }
 
+function initToolbarToggles() {
+  const toggleConfigBtn = document.getElementById("toggleConfigBtn");
+  const configPanel = document.getElementById("configPanel");
+
+  if (toggleConfigBtn && configPanel) {
+    toggleConfigBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = configPanel.hidden;
+      configPanel.hidden = !isHidden;
+      toggleConfigBtn.classList.toggle("active", isHidden);
+    });
+  }
+
+  document.querySelectorAll(".dropdown-trigger").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const parent = btn.closest(".dropdown");
+      const isExpanded = parent.classList.contains("open");
+
+      document.querySelectorAll(".dropdown").forEach((d) => d.classList.remove("open"));
+
+      if (!isExpanded) {
+        parent.classList.add("open");
+      }
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".dropdown")) {
+      document.querySelectorAll(".dropdown").forEach((d) => d.classList.remove("open"));
+    }
+  });
+
+  document.querySelectorAll(".dropdown-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      document.querySelectorAll(".dropdown").forEach((d) => d.classList.remove("open"));
+    });
+  });
+}
+
 // ---------- شروع اولیه ----------
 initThemeAndContrast();
 applySavedPuzzleOptions();
+initToolbarToggles();
 generateNewPuzzle();
 renderWordBank();
 
-// ثبت سرویس‌ورکر (PWA) برای کارکرد آفلاین و نصب
+// ثبت و بروزرسانی هوشمند سرویس‌ورکر (PWA)
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker.register("./sw.js").then((reg) => {
+      reg.update();
+    }).catch(() => {});
   });
 }
