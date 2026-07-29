@@ -1163,9 +1163,11 @@ function buildBatchPrintView(puzzles, placement, includeCover = true) {
     cover.className = "booklet-cover-page";
     const d = new Date();
     const randomQuote = INSPIRING_QUOTES[Math.floor(Math.random() * INSPIRING_QUOTES.length)];
+    const difficultyText = isHardDifficulty() ? "سخت" : "عادی";
     cover.innerHTML = `
       <h1>کتابچه جدول‌های متقاطع روزنامه‌ای</h1>
       <h2>مجموعه ${toFaDigits(total)} جدول متقاطع روزنامه‌ای با پاسخ‌نامه</h2>
+      <div class="cover-difficulty">سطح دشواری: ${difficultyText}</div>
       <div class="cover-dedication">❤️ تقدیم با عشق به پدر عزیزم</div>
       <div class="cover-quote-card">
         <p class="cover-quote-text">${randomQuote.text}</p>
